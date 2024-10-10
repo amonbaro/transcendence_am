@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Register</title>
+	<link rel="stylesheet" href="../css/styles.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body data-bs-theme="dark" class="more-marge-top">
+
+	<nav class="navbar navbar-expand-lg bg-light-subtle fixed-top">
+		<div class="container-fluid">
+			<a href="../index.html" class="navbar-brand">
+				<img src="../../media/images/logo.png" alt="logo" width="30" height="30" class="d-inline-block align-text-top">
+			</a>
+			<div class="dropdown ms-auto" id="userMenu">
+			</div>
+		</div>
+	</nav>
+
+	<div class="text-center mt-5">
+		<h2 class="mb-4">Register</h2>
+		<form id="registrationForm" class="w-50 mx-auto text-start" enctype="multipart/form-data">
+			<div class="mb-3">
+				<label for="name" class="form-label">Name :</label>
+				<div class="row">
+					<div class="col-md-6">
+						<input type="text" class="form-control" id="first_name" name="first_name" placeholder="First" required>
+					</div>
+					<div class="col-md-6">
+						<input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last" required>
+					</div>
+				</div>
+			</div>
+
+			<div class="mb-3">
+				<label for="email" class="form-label">Email :</label>
+				<input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+			</div>
+
+			<div class="mb-3">
+				<label for="username" class="form-label">Username :</label>
+				<input type="text" class="form-control" id="username" name="username" required>
+			</div>
+
+			<div class="mb-3">
+				<label for="password" class="form-label">Password :</label>
+				<input type="password" class="form-control" id="password" name="password" required>
+				<div id="passwordHelpBlock" class="form-text">
+					Must contain at least 12 characters<br>
+					With : uppercase, lowercase, numeric and special caracter<br>
+					Can't be : common word, your first name, last name or email
+				</div>
+			</div>
+
+			<div class="mb-3">
+				<label for="password2" class="form-label">Confirm password :</label>
+				<input type="password" class="form-control" id="password2" name="password2" required>
+			</div>
+
+			<div class="mb-3">
+				<label for="profile_photo" class="form-label">Profile Photo :</label>
+				<input type="file" class="form-control" id="profile_photo" name="profile_photo" accept="image/*">
+			</div>
+
+			<button type="submit" class="btn btn-primary d-block mx-auto mt-5">Submit</button>
+		</form>
+	</div>
+
+	<script src="../js/common.js"></script>
+	<script src="../js/userMenu.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+	<script src="../js/register.js"></script>
+</body>
+</html>

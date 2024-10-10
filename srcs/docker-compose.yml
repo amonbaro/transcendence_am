@@ -1,0 +1,132 @@
+services:
+  postgres:
+    build: ./requirements/postgres
+    image: postgres:custom
+    container_name: postgres
+    expose:
+      - "5432:5432"
+    networks:
+      - pong_network
+    env_file:
+      - .env
+    secrets:
+      - pgdb
+      - pguser
+      - pgpass
+      - pg_superuser_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  auth:
+    build: ./requirements/auth
+    image: auth:custom
+    container_name: auth
+    ports:
+      - "8000:8000"
+    networks:
+      - pong_network
+    env_file:
+      - .env
+    secrets:
+      - auth_secret_key
+      - pgdb
+      - pguser
+      - pgpass
+      - django_superuser_password
+      - django_superuser_email
+      - django_superuser_username
+      - django_superuser_first_name
+      - django_superuser_last_name
+    depends_on:
+      - postgres
+    volumes:
+      - profile_photos:/usr/src/app/media/profile_photos
+    restart: always
+
+  nginx:
+    build: ./requirements/nginx
+    image: nginx:custom
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - pong_network
+    env_file:
+      - .env
+    depends_on:
+      - auth
+    volumes:
+      - static_files:/var/www/html/static
+      - media_files:/var/www/html/media
+      - profile_photos:/var/www/html/profile_photos
+    restart: always
+
+#  cron:
+#    build: ./requirements/cron
+#    image: cron:custom
+#    container_name: cron
+#    networks:
+#      - pong_network
+#    depends_on:
+#      - auth
+#    restart: always
+
+networks:
+  pong_network:
+    name: pong
+
+volumes:
+  postgres_data:
+    name: postgres_data
+    driver: local
+    driver_opts:
+      type: nfs
+      device: /Users/Shared/postgres/data/
+      o: bind
+  static_files:
+    name: static_files
+    driver: local
+    driver_opts:
+      type: none
+      device: site/static
+      o: bind
+  media_files:
+    name: media_files
+    driver: local
+    driver_opts:
+      type: none
+      device: site/media
+      o: bind
+  profile_photos:
+    name: profile_photos
+    driver: local
+    driver_opts:
+      type: none
+      device: site/profile_photos
+      o: bind
+
+
+secrets:
+  auth_secret_key:
+    file: ./secrets/auth_secret_key.txt
+  pgdb:
+    file: ./secrets/pgdb.txt
+  pguser:
+    file: ./secrets/pguser.txt
+  pgpass:
+    file: ./secrets/pgpass.txt
+  pg_superuser_pass:
+    file: ./secrets/pgsuperuser_pass.txt
+  django_superuser_password:
+    file: ./secrets/django_superuser_password.txt
+  django_superuser_email:
+    file: ./secrets/django_superuser_email.txt
+  django_superuser_username:
+    file: ./secrets/django_superuser_username.txt
+  django_superuser_first_name:
+    file: ./secrets/django_superuser_first_name.txt
+  django_superuser_last_name:
+    file: ./secrets/django_superuser_last_name.txt
+

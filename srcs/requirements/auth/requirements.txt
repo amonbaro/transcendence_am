@@ -1,0 +1,36 @@
+# Debian 11 uses Python 3.9
+Django>=3.2,<5.0
+
+# for Django internal server
+# “bullseye” contain the latest released version of Gunicorn 20.0.4
+# Requirements: Python 3.x >= 3.7
+# source https://docs.gunicorn.org/en/latest/install.html
+gunicorn==20.0.4
+
+# for PostgreSQL
+# psycopg2 will be soon obsolete
+# version 3.2.1 out since 01.07.2024
+# source https://pypi.org/search/?q=psycopg2&o=&c=Programming+Language+%3A%3A+Python+%3A%3A+3.9
+psycopg2-binary==2.9.9
+
+# for file compression
+whitenoise>=6.0.0
+
+# to load the configuration from a .env file when it is present
+# in settings.py use: from dotenv import load_dotenv
+# By default, load_dotenv doesn't override existing environment variables.
+# python-dotenv
+
+# for Django REST framework
+djangorestframework>=3.12.4
+
+# Simple-JWT: JSON Web Token authentication for Django REST framework
+djangorestframework-simplejwt>=5.3.0
+
+# for image field
+pillow>=8.1.2
+
+django-cors-headers>=2.2.0-2
+
+#django-crontab
+#django-cron

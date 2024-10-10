@@ -1,0 +1,23 @@
+.more-marge-top
+{
+	padding-top: 56px;
+}
+
+.no-border
+{
+	border: none;
+	box-shadow: none;
+}
+
+.form-control.touch-field {
+    border: 1px solid #ced4da6c;
+    padding: 5px;
+    border-radius: 0;
+	cursor: pointer;
+	caret-color: transparent;
+}
+
+.key-label {
+	width: 120px;
+}
+  
