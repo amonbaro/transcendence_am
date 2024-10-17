@@ -33,3 +33,14 @@ document.addEventListener("DOMContentLoaded", () => {
 document.getElementById('backButton').addEventListener('click', () => {
     window.location.href = '../index.html';
 });
+
+document.addEventListener('keydown', function(event) {
+    // Empêche uniquement le défilement de la page lorsque les touches fléchées sont pressées
+    const keysToPrevent = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+    const canvas = document.getElementById('webgl1'); // On cible le canvas du jeu
+
+    if (keysToPrevent.includes(event.key) && document.activeElement !== canvas) {
+        // Si le focus n'est pas sur le canvas, on empêche le défilement
+        event.preventDefault();
+    }
+});

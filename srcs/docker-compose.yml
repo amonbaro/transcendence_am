@@ -63,15 +63,15 @@ services:
       - profile_photos:/var/www/html/profile_photos
     restart: always
 
-#  cron:
-#    build: ./requirements/cron
-#    image: cron:custom
-#    container_name: cron
-#    networks:
-#      - pong_network
-#    depends_on:
-#      - auth
-#    restart: always
+  cron:
+    build: ./requirements/cron
+    image: cron:custom
+    container_name: cron
+    networks:
+      - pong_network
+    depends_on:
+      - auth
+    restart: always
 
 networks:
   pong_network:

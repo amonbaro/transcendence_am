@@ -1,5 +1,5 @@
 from email.policy import default
-
+import uuid
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.conf import settings
@@ -38,7 +38,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'password', 'password2', 'email', 'first_name', 'last_name', 'profile_photo', 'is_active', 'date_joined', 'last_login']
+        fields = ['id', 'username', 'password', 'password2', 'email', 'first_name', 'last_name', 'profile_photo', 'is_active', 'date_joined', 'last_login']
         read_only_fields = ['image_height', 'image_width']
 
     def validate(self, attrs):
@@ -78,7 +78,8 @@ class MyCustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         if not user.is_active:
             user.is_active = True
-            user.save(update_fields=['is_active'])
+            user.is_online = True
+            user.save(update_fields=['is_active', 'is_online'])
             print(f"User {user.username} has been reactivated.")
 
         token = super().get_token(user) # generate token
@@ -92,6 +93,7 @@ class MyCustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 #-----------------------------------------------------------------------------------------------------------------------
 class UserProfileSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(read_only=True)
     first_name = serializers.CharField(required=False, allow_blank=False)
     last_name = serializers.CharField(required=False, allow_blank=False)
     profile_photo = serializers.ImageField(
@@ -109,10 +111,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
     date_joined = serializers.DateTimeField(read_only=True, format=settings.DATETIME_FORMAT)
     last_login = serializers.DateTimeField(read_only=True, format=settings.DATETIME_FORMAT)
     delete_photo = serializers.BooleanField(default=False, required=False, write_only=True)
+    is_online = serializers.BooleanField(required=False, read_only=True)
 
     class Meta:
         model = User
-        fields = [ 'username', 'email', 'first_name', 'last_name', 'is_active', 'profile_photo', 'date_joined', 'last_login', 'updated_at', 'delete_photo' ]
+        fields = [ 'id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'profile_photo', 'date_joined', 'last_login', 'updated_at', 'delete_photo', 'is_online' ]
         read_only_fields = [ 'image_height', 'image_width']
 
     def validate(self, data):
@@ -136,3 +139,29 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise ValidationError({"old_password": "The old password is incorrect."})
         return value
 #-------------------------------------------------------------------------------------------------------------------------
+class UserIdSerializer(serializers.Serializer):
+    user_id = serializers.UUIDField(required=True)
+# ----------------------------------------------------------------------------------------------------------------------
+
+class UserProtectedInfoSerializer(serializers.ModelSerializer):
+    date_joined = serializers.DateTimeField(read_only=True, format=settings.DATETIME_FORMAT)
+    last_login = serializers.DateTimeField(read_only=True, format=settings.DATETIME_FORMAT)
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'profile_photo', 'is_active', 'date_joined', 'last_login', 'is_online']
+
+class UserProtectedPublicInfoSerializer(serializers.ModelSerializer):
+    date_joined = serializers.DateTimeField(read_only=True, format=settings.DATETIME_FORMAT)
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'profile_photo', 'is_active', 'date_joined', 'is_online']
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+class VerifyUserLoginSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'password']

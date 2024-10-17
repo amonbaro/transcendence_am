@@ -22,7 +22,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('api/user/admin/', admin.site.urls),
-    path('api/user/', include('pong_app.urls')),
+    path('api/user/', include('user_app.urls')),
+    path('api/friends/', include('friends_app.urls')),
+    path('api/game/', include('game_app.urls')),
 ]
 
 # to see image in postman when debug mode is on

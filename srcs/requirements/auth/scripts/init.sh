@@ -2,63 +2,69 @@
 
 #set -e # stop at first error
 
-#export SECRET_KEY=$(cat "$AUTH_SECRET_KEY_FILE")
-#export DJANGO_SETTINGS_MODULE=pong_site.settings
-#export PYTHONPATH=/usr/src/app
-
 PERMISSIONS=$(stat -c "%a" /usr/src/app/media)
 OWNER=$(stat -c "%U" /usr/src/app/media)
 GROUP=$(stat -c "%G" /usr/src/app/media)
 
-echo "username: $USERNAME, groupname: $GROUPNAME"
-
 if [ "$OWNER" != "$USERNAME" ] || [ "$GROUP" != "$GROUPNAME" ]; then
-    echo "$OWNER is not equal to $USERNAME or $GROUP is not equal to $GROUPNAME"
-    echo "Changing the owner and the group of /usr/src/app/media to $USERNAME and $GROUPNAME"
+    if [ $LOG_LEVEL = "DEBUG" ]; then
+      echo "Current ownerships of usr/src/app/media are $OWNER:$GROUP"
+      echo "Changing the ownerships of /usr/src/app/media to $USERNAME:$GROUPNAME"
+    fi
     chown -R "$USERNAME":"$GROUPNAME" /usr/src/app/media
 fi
 
 if [ "$PERMISSIONS" -ne 755 ]; then
-    echo "$OWNER is not equal to $USERNAME or $GROUP is not equal to $GROUPNAME"
-    echo "Changing the permissions of /usr/src/app/media to 755"
+    if [ $LOG_LEVEL = "DEBUG" ]; then
+      echo "Current permissions of /usr/src/app/media are $PERMISSIONS"
+      echo "Changing the permissions of /usr/src/app/media to 755"
+    fi
     chmod -R 755 /usr/src/app/media
+fi
+
+get_secret() {
+    # if file exists
+    if [ -f "$1" ]; then
+        echo "Reading secret from $1"
+        local secret_value=$(cat "$1")
+        if [ -z "$secret_value" ]; then
+            echo "Secret file $1 is empty"
+            exit 1
+        else
+            export "$2=$secret_value"  # Correction ici
+        fi
+    else
+        echo "Secret file $1 not found"
+        exit 1
+    fi
+}
+
+get_secret "$DJANGO_SUPERUSER_PASSWORD_FILE" DJANGO_SUPERUSER_PASSWORD
+get_secret "$DJANGO_SUPERUSER_USERNAME_FILE" DJANGO_SUPERUSER_USERNAME
+get_secret "$DJANGO_SUPERUSER_EMAIL_FILE" DJANGO_SUPERUSER_EMAIL
+get_secret "$DJANGO_SUPERUSER_FIRST_NAME_FILE" DJANGO_SUPERUSER_FIRST_NAME
+get_secret "$DJANGO_SUPERUSER_LAST_NAME_FILE" DJANGO_SUPERUSER_LAST_NAME
+
+if [ "$LOG_LEVEL" = "DEBUG" ]; then
+    echo "LOG_LEVEL is set to: $LOG_LEVEL"
+    echo "Debug mode is: $DEBUG"
+    echo "DJANGO_SUPERUSER_EMAIL: $DJANGO_SUPERUSER_EMAIL"
+    echo "DJANGO_SUPERUSER_USERNAME: $DJANGO_SUPERUSER_USERNAME"
+    echo "DJANGO_SUPERUSER_PASSWORD: $DJANGO_SUPERUSER_PASSWORD"
 fi
 
 ./scripts/wait-for-it.sh postgres:5432 --timeout=30 --strict -- echo "PostgreSQL is up"
 
-DJANGO_SUPERUSER_PASSWORD=$(cat "$DJANGO_SUPERUSER_PASSWORD_FILE")
-DJANGO_SUPERUSER_USERNAME=$(cat "$DJANGO_SUPERUSER_USERNAME_FILE")
-DJANGO_SUPERUSER_EMAIL=$(cat "$DJANGO_SUPERUSER_EMAIL_FILE")
-DJANGO_SUPERUSER_FIRST_NAME=$(cat "$DJANGO_SUPERUSER_FIRST_NAME_FILE")
-DJANGO_SUPERUSER_LAST_NAME=$(cat "$DJANGO_SUPERUSER_LAST_NAME_FILE")
-
-export DJANGO_SUPERUSER_PASSWORD
-export DJANGO_SUPERUSER_USERNAME
-export DJANGO_SUPERUSER_EMAIL
-
-if [ "$LOG_LEVEL" = "DEBUG" ]; then
-    PGNAME=$(cat "$POSTGRES_DB_NAME_FILE")
-    PGUSER=$(cat "$POSTGRES_USER_FILE")
-    PGPASS=$(cat "$POSTGRES_PASSWORD_FILE")
-    DJANGO_SUPERUSER_EMAIL=$(cat "$DJANGO_SUPERUSER_EMAIL_FILE")
-    DJANGO_SUPERUSER_USERNAME=$(cat "$DJANGO_SUPERUSER_USERNAME_FILE")
-    DJANGO_SUPERUSER_PASSWORD=$(cat "$DJANGO_SUPERUSER_PASSWORD_FILE")
-
-    echo "LOG_LEVEL is set to: $LOG_LEVEL" 
-    echo "Debug mode is: $DEBUG" 
-    echo "DJANGO_SUPERUSER_EMAIL: $DJANGO_SUPERUSER_EMAIL"
-    echo "DJANGO_SUPERUSER_USERNAME: $DJANGO_SUPERUSER_USERNAME" 
-    echo "DJANGO_SUPERUSER_PASSWORD: $DJANGO_SUPERUSER_PASSWORD" 
-fi
-
 # create tables from models
 echo "Make migrations"
-python3 manage.py makemigrations pong_app
+python3 manage.py makemigrations user_app
+python3 manage.py makemigrations friends_app
+python3 manage.py makemigrations game_app
 
 
 if [ "$LOG_LEVEL" = "DEBUG" ]; then
-    echo "executing python3 manage.py sqlmigrate pong_app 0001"
-    python3 manage.py sqlmigrate pong_app 0001
+    echo "executing python3 manage.py sqlmigrate user_app 0001"
+    python3 manage.py sqlmigrate user_app 0001
 fi
 
 # Check if there are any unapplied migrations
@@ -107,6 +113,7 @@ fi
 #crontab /usr/src/app/mycron
 #service cron start
 #rm /usr/src/app/mycron
+
 #service cron start
 
 exec gunicorn -c gunicorn.conf.py pong_site.wsgi:application

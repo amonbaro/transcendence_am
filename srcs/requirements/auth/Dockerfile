@@ -56,7 +56,7 @@ RUN apt-get update && \
                    iputils-ping \
                    # for api test
                    curl
-                   # editor of crontab
+#                   # editor of crontab
 #                   nano \
 #                   # for cron tasks
 #                   cron \

@@ -86,3 +86,12 @@ class ChangePasswordView(generics.UpdateAPIView):
 
 #-----------------------------------------------------------------------------------------------------------------------
 
+class ShowAllUsersView(generics.ListAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get']
+
+    def get_queryset(self):
+        user = self.request.user
+        return User.objects.filter(is_active=True).exclude(last_login__isnull=True).exclude(is_superuser=True).exclude(id=user.id)
+

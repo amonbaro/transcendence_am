@@ -219,43 +219,46 @@ function addPlayerField(index, noControls = false) {
     }
 
     // Ajoute des écouteurs d'événements pour les champs Up et Down avec validation
-    document.getElementById(`player${index}Up`).addEventListener('keydown', function(event) {
-        event.preventDefault();
-        const key = event.key;
-
-        // Vérification pour les touches directionnelles
-        let displayValue = key;
-        if (key === "ArrowUp") displayValue = "↑";
-        else if (key === "ArrowDown") displayValue = "↓";
-        else if (key === "ArrowLeft") displayValue = "←";
-        else if (key === "ArrowRight") displayValue = "→";
-
-        // Vérification pour n'autoriser que les lettres minuscules, chiffres, et flèches directionnelles
-        if ((/^[a-z0-9]$/.test(key)) || ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-            this.value = displayValue; // Affiche le caractère approprié si la touche est valide
-        } else {
-            alert("Only lowercase letters, numbers, and arrow keys are allowed.");
-        }
-    });
-
-    document.getElementById(`player${index}Down`).addEventListener('keydown', function(event) {
-        event.preventDefault();
-        const key = event.key;
-
-        // Vérification pour les touches directionnelles
-        let displayValue = key;
-        if (key === "ArrowUp") displayValue = "↑";
-        else if (key === "ArrowDown") displayValue = "↓";
-        else if (key === "ArrowLeft") displayValue = "←";
-        else if (key === "ArrowRight") displayValue = "→";
-
-        // Vérification pour n'autoriser que les lettres minuscules, chiffres, et flèches directionnelles
-        if ((/^[a-z0-9]$/.test(key)) || ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-            this.value = displayValue; // Affiche le caractère approprié si la touche est valide
-        } else {
-            alert("Only lowercase letters, numbers, and arrow keys are allowed.");
-        }
-    });
+	document.getElementById(`player${index}Up`).addEventListener('keydown', function(event) {
+		event.preventDefault();
+		const key = event.key;
+		let displayValue = key;
+	
+		// Vérification et conversion des flèches en icônes Unicode
+		if (key === "ArrowUp") displayValue = "↑";
+		else if (key === "ArrowDown") displayValue = "↓";
+		else if (key === "ArrowLeft") displayValue = "←";
+		else if (key === "ArrowRight") displayValue = "→";
+	
+		// Vérification pour n'autoriser que les lettres minuscules, chiffres, et flèches directionnelles
+		if ((/^[a-z0-9]$/.test(key)) || ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+			this.value = displayValue; // Affiche l'icône
+			this.setAttribute('data-key', key); // Stocke la vraie touche dans un attribut data-key
+		} else {
+			alert("Only lowercase letters, numbers, and arrow keys are allowed.");
+		}
+	});
+	
+	document.getElementById(`player${index}Down`).addEventListener('keydown', function(event) {
+		event.preventDefault();
+		const key = event.key;
+		let displayValue = key;
+	
+		// Vérification et conversion des flèches en icônes Unicode
+		if (key === "ArrowUp") displayValue = "↑";
+		else if (key === "ArrowDown") displayValue = "↓";
+		else if (key === "ArrowLeft") displayValue = "←";
+		else if (key === "ArrowRight") displayValue = "→";
+	
+		// Vérification pour n'autoriser que les lettres minuscules, chiffres, et flèches directionnelles
+		if ((/^[a-z0-9]$/.test(key)) || ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+			this.value = displayValue; // Affiche l'icône
+			this.setAttribute('data-key', key); // Stocke la vraie touche dans un attribut data-key
+		} else {
+			alert("Only lowercase letters, numbers, and arrow keys are allowed.");
+		}
+	});
+	
 }
 
 
@@ -313,8 +316,9 @@ document.getElementById('startGame').addEventListener('click', () => {
         let downKey = '';
 
         if (mode !== 'tournament' || i < 2) {
-            upKey = document.getElementById(`player${i}Up`).value.trim();
-            downKey = document.getElementById(`player${i}Down`).value.trim();
+            // Récupérer la vraie touche depuis 'data-key' si elle est définie
+            upKey = document.getElementById(`player${i}Up`).getAttribute('data-key') || document.getElementById(`player${i}Up`).value.trim();
+            downKey = document.getElementById(`player${i}Down`).getAttribute('data-key') || document.getElementById(`player${i}Down`).value.trim();
         }
 
         // Vérification des champs vides
@@ -372,8 +376,8 @@ document.getElementById('startGame').addEventListener('click', () => {
 
             // Pour le mode tournament, récupérer uniquement les deux premières paires de touches
             if (mode !== 'tournament' || i < 2) {
-                upKey = document.getElementById(`player${i}Up`).value;
-                downKey = document.getElementById(`player${i}Down`).value;
+                upKey = document.getElementById(`player${i}Up`).getAttribute('data-key') || document.getElementById(`player${i}Up`).value;
+                downKey = document.getElementById(`player${i}Down`).getAttribute('data-key') || document.getElementById(`player${i}Down`).value;
             }
 
             playerNames.push(playerName);
@@ -397,6 +401,7 @@ document.getElementById('startGame').addEventListener('click', () => {
         window.location.href = 'game.html'; // Rediriger vers la page du jeu
     }
 });
+
 
 
 
