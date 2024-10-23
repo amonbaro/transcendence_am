@@ -116,3 +116,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
     }
 });
+
+const blob = document.querySelector('.blob');
+
+document.addEventListener('mousemove', (e) => {
+	const { clientX, clientY } = e;
+	
+	// Transition plus douce
+	blob.style.transform = `translate3d(calc(${clientX}px - 50%), calc(${clientY}px - 50%), 0)`;
+	
+	// Animation de la couleur
+	const xPercentage = (clientX / window.innerWidth) * 100;
+	const yPercentage = (clientY / window.innerHeight) * 100;
+	blob.style.backgroundPosition = `${xPercentage}% ${yPercentage}%`;
+});

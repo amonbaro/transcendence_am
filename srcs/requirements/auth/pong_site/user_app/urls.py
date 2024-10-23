@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -14,6 +14,7 @@ from .views import (
     VerifyUserLoginView
 )
 from .cron import flush_expired_tokens, show_blacklisted_tokens
+from django.contrib.auth import views as auth_views
 
 app_name = 'user_app'
 
@@ -29,5 +30,6 @@ urlpatterns = [
     path('show-blacklisted-tokens/', show_blacklisted_tokens, name='show_blacklisted_tokens'),
     path('show-all-users/', ShowAllUsersView.as_view(), name='show_all_users'),
     path('get-user-from-id/', GetUserFromIDView.as_view(), name='get_user_from_id'),
-    path('verify-user-login/', VerifyUserLoginView.as_view(), name='verify_user_login')
+    path('verify-user-login/', VerifyUserLoginView.as_view(), name='verify_user_login'),
+    path('password_change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
 ]

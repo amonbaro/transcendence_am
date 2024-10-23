@@ -92,7 +92,8 @@ class RegisterGameSessionView(generics.CreateAPIView):
 
         mode = serializer.validated_data['session']
         players = serializer.validated_data['players']
-        winner_alias = serializer.validated_data['winner_alias']
+        winner_alias1 = serializer.validated_data['winner_alias']
+        winner_alias2 = serializer.validated_data['winner_alias2']
 
         end_date = datetime.now()
         try:
@@ -101,26 +102,32 @@ class RegisterGameSessionView(generics.CreateAPIView):
         except ValueError:
             return Response({"error": "Invalid date format. Please use 'dd/mm/yyyy HH:MM:SS'"}, status=status.HTTP_400_BAD_REQUEST)
 
-        session = GameSession.objects.create(mode=mode.get('mode'), numbers_of_players=len(players), game_duration=diff, start_date=start_date, winner_alias=winner_alias)
+        #session = GameSession.objects.create(mode=mode.get('mode'), numbers_of_players=len(players), game_duration=diff, start_date=start_date, winner_alias=winner_alias)
+        session = GameSession.objects.create(mode=mode.get('mode'), numbers_of_players=len(players), game_duration=diff, start_date=start_date)
 
         for player in players:
-            if player['user'] is None:
-                user = None
-            else:
+            try:
                 user_id = player['user']
                 user = User.objects.get(id=user_id)
-            if player['alias'] == winner_alias:
+            except User.DoesNotExist:
+                user = None
+            if player['alias'] == winner_alias1 or (winner_alias2 and player['alias'] == winner_alias2):
                 PlayerProfile.objects.create(alias=player['alias'], session=session, user=user, win=True)
             else:
                 PlayerProfile.objects.create(alias=player['alias'], session=session, user=user)
 
         # Get the winner profile to access the user id. We need to return the winner id in the response
-        winner_profile = PlayerProfile.objects.get(session=session, alias=winner_alias)
+        winner_profile1 = PlayerProfile.objects.get(session=session, alias=winner_alias1)
 
         # If the winner is registered user -> get the id, else -> return NONE
-        winner_id = winner_profile.user.id if winner_profile.user else None
+        winner_id1 = winner_profile1.user.id if winner_profile1.user else None
 
-        return Response({"session_id": session.id, "winner_id": winner_id }, status=status.HTTP_201_CREATED)
+        if not winner_alias2:
+            return Response({"session_id": session.id, "winner_id1": winner_id1 }, status=status.HTTP_201_CREATED)
+        else:
+            winner_profile2 = PlayerProfile.objects.get(session=session, alias=winner_alias2)
+            winner_id2 = winner_profile2.user.id if winner_profile2.user else None
+            return Response({"session_id": session.id, "winner_id1": winner_id1, "winner_id2": winner_id2 }, status=status.HTTP_201_CREATED)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -170,6 +177,8 @@ class ShowOtherUserStatsView(APIView):
         try:
             # Get other user instance. If not found -> raise exception 404
             other_user = User.objects.get(id=other_user_id)
+
+            # Declare an empty dictionary to store the result
             result = {}
 
             # Check for errors
@@ -280,7 +289,8 @@ class OtherUserMatchHistoryView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 # ----------------------------------------------------------------------------------------------------------------------
-
+# If there are two winners per game, send their aliases in a single string separated by a comma with join method.
+# Do the same for the usernames.
 class ShowAllGamesView(generics.ListAPIView):
     http_method_names = ['get']
     permission_classes = [AllowAny]
@@ -289,12 +299,18 @@ class ShowAllGamesView(generics.ListAPIView):
         game_sessions_list = []
 
         for session in game_sessions:
-            winner = PlayerProfile.objects.get(session=session, win=True)
+            winners = PlayerProfile.objects.filter(session=session, win=True)
 
-            if winner.user:
-                winner_username = winner.user.username if winner.user.is_active else "deactivated user"
-            else:
-                winner_username = "invited player"
+            winners_usernames = []
+            winners_aliases = []
+
+            for winner in winners:
+                if winner.user:
+                    winner_username = winner.user.username if winner.user.is_active else "deactivated user"
+                else:
+                    winner_username = "invited player"
+                winners_usernames.append(winner_username)
+                winners_aliases.append(winner.alias)
 
             game_sessions_list.append(
                 {
@@ -302,8 +318,8 @@ class ShowAllGamesView(generics.ListAPIView):
                     "date_played": session.start_date.strftime('%d %b %Y'),
                     "game_duration": format_duration(session.game_duration),
                     "number_of_players": session.numbers_of_players,
-                    "winner_alias": session.winner_alias,
-                    "winner_username": winner_username,
+                    "winner_alias": ', '.join(winners_aliases), # join method of a list
+                    "winner_username": ', '.join(winners_usernames), # # join method of a list
                }
             )
         return Response(game_sessions_list, status=status.HTTP_200_OK)

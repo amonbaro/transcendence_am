@@ -116,32 +116,43 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 #-----------------------------------------------------------------------------------------------------------------------
+# To change a password programmatically, use set_password() (takes care of the password hashing.)
+# Django also provides views and forms that may be used to allow users to change their own passwords.
+# Changing a user’s password will log out all their sessions.
+# Les vues fournies par défaut avec Django pour le changement de mot de passe
+# mettent à jour la session avec la valeur de hachage du nouveau mot de passe
+# pour que l’utilisateur qui change son mot de passe ne soit pas déconnecté.
+# Si vous avez une vue personnalisée pour le changement de mot de passe et
+# que vous souhaitez avoir un comportement similaire, utilisez la fonction update_session_auth_hash().
+# Cette fonction accepte en entrée la requête actuelle ainsi que l’objet utilisateur mis à jour
+# et à partir duquel la nouvelle valeur de hachage de la session sera calculée ;
+# elle met à jour la valeur de hachage de la session.
+# Elle se charge aussi d’alterner la clé de session afin qu’un cookie de session volé soit invalidé
+
+from django.contrib.auth import update_session_auth_hash
+
 class ChangePasswordView(generics.UpdateAPIView):
     serializer_class = ChangePasswordSerializer
-    queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
-    http_method_names = ['post']
+    http_method_names = ['patch']
 
-    def get_object(self, queryset=None):
-        return self.request.user
-
-    def update(self, request, *args, **kwargs):
-        user = self.get_object()
+    def patch(self, request, *args, **kwargs):
+        #get the user object from the request context
+        current_user = request.user
         serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if serializer.is_valid():
-            # Check old password
-            if not user.check_password(serializer.validated_data['old_password']):
-                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+        # Check old password
+        if not current_user.check_password(serializer.validated_data['old_password']):
+            return Response({"old_password": "The old password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Set the new password
-            user.set_password(serializer.validated_data['new_password'])
-            user.save()
+        # Set the new password
+        current_user.set_password(serializer.validated_data['new_password'])
+        current_user.save()
 
-            password_changed(serializer.data.get("new_password"), user=user)
-            return Response({"detail": "Password updated successfully."}, status=status.HTTP_200_OK)
+        update_session_auth_hash(request, current_user)
+        return Response({"detail": "Password updated successfully."}, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -203,7 +214,9 @@ class GetUserFromIDView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 #-----------------------------------------------------------------------------------------------------------------------
-
+# check_password(raw_password)
+# Returns True if the given raw string is the correct password for the user.
+# This takes care of the password hashing in making the comparison.
 class VerifyUserLoginView(APIView):
     permission_classes = [AllowAny]
     http_method_names = ['post']
@@ -220,6 +233,8 @@ class VerifyUserLoginView(APIView):
             elif not user.check_password(serializer.validated_data['password']):
                 return Response({"error": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({"message": "Login successful."}, status=status.HTTP_200_OK)
+                return Response({"username": f"{user.username}", "id": f"{user.id}"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+#-----------------------------------------------------------------------------------------------------------------------

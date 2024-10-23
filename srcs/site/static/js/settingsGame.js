@@ -1,3 +1,5 @@
+import { storeGameSession } from './games/registerGame.js';
+
 const MIN_PLAYERS = 2;
 const VERSUS_MAX = 4;
 const TOURNAMENT_MAX = 10;
@@ -46,7 +48,6 @@ function updateOptions() {
         document.getElementById('maxScoreValue').textContent = maxScoreField.value;
     }
 
-    // Toujours ajouter les deux premiers joueurs avec les champs de touches
     for (let i = 0; i < 2; i++) {
         addPlayerField(i);
     }
@@ -69,11 +70,10 @@ function addPlayer() {
     
     for (let i = 0; i < toAdd; i++) {
         if (currentPlayers + i < maxPlayers) {
-            // Ajouter uniquement le champ du nom pour les joueurs au-delà des deux premiers
             if (currentPlayers + i >= 2 && mode === 'tournament') {
-                addPlayerField(currentPlayers + i, true);  // Le deuxième paramètre 'true' empêche d'ajouter des touches
+                addPlayerField(currentPlayers + i, true);
             } else {
-                addPlayerField(currentPlayers + i);  // Ajoute normalement les joueurs et leurs touches
+                addPlayerField(currentPlayers + i);
             }
         }
     }
@@ -81,7 +81,6 @@ function addPlayer() {
     updateAddPlayerButton();
     updateRemovePlayerButton();
 }
-
 
 function removePlayer() {
     const mode = document.getElementById('mode').value;
@@ -95,10 +94,8 @@ function removePlayer() {
     for (let i = 0; i < toRemove; i++) {
         if (playerContainersCol1.length + playerContainersCol2.length > MIN_PLAYERS) {
             if (playerContainersCol1.length > playerContainersCol2.length) {
-                // Supprime l'intégralité du conteneur du dernier joueur dans la première colonne
                 playerContainersCol1[playerContainersCol1.length - 1].remove();
             } else {
-                // Supprime l'intégralité du conteneur du dernier joueur dans la deuxième colonne
                 playerContainersCol2[playerContainersCol2.length - 1].remove();
             }
         }
@@ -108,12 +105,10 @@ function removePlayer() {
     updateRemovePlayerButton();
 }
 
-
 function addPlayerField(index, noControls = false) {
     const controlsWrapper = document.getElementById('player-controls-wrapper');
     let column;
 
-    // Si l'index est pair (0, 2, etc.), placer dans la première colonne
     if (index % 2 === 0) {
         if (!document.getElementById('column1')) {
             column = document.createElement('div');
@@ -123,9 +118,7 @@ function addPlayerField(index, noControls = false) {
         } else {
             column = document.getElementById('column1');
         }
-    }
-    // Si l'index est impair (1, 3, etc.), placer dans la deuxième colonne
-    else {
+    } else {
         if (!document.getElementById('column2')) {
             column = document.createElement('div');
             column.classList.add('col-md-5', 'mx-auto');
@@ -136,26 +129,24 @@ function addPlayerField(index, noControls = false) {
         }
     }
 
-    // Conteneur principal pour un joueur
     const playerContainer = document.createElement('div');
     playerContainer.classList.add('player-container', 'mt-5', 'mb-5', 'text-center');
 
-    // Titre du joueur
     const playerTitle = document.createElement('h5');
     playerTitle.textContent = `Player ${index + 1}`;
-    playerContainer.appendChild(playerTitle); // Ajout du titre au conteneur
+    playerContainer.appendChild(playerTitle);
 
-    // Conteneur pour le nom du joueur
     const divPlayer = document.createElement('div');
     divPlayer.classList.add('player-control', 'mb-3');
     divPlayer.innerHTML = `
         <input type="text" class="form-control" id="player${index}" placeholder="Enter player name" autocomplete="off">
+		<br>
+		<button class="btn btn-outline-primary connect-btn" data-player-index="${index}" data-bs-toggle="modal" data-bs-target="#loginModal">Connect</button>
     `;
     playerContainer.appendChild(divPlayer);
 
     const mode = document.getElementById('mode').value;
 
-    // Définir les labels en fonction du mode sélectionné
     let upLabel = "Up Key";
     let downLabel = "Down Key";
 
@@ -164,34 +155,29 @@ function addPlayerField(index, noControls = false) {
         downLabel = "Right Key";
     }
 
-    // Création des titres pour les paires de touches en mode tournament
     let touchTitle = "";
     if (mode === 'tournament') {
         if (index % 2 === 0) {
-            touchTitle = "Left players";  // Pour les joueurs de gauche
+            touchTitle = "Left players";
         } else {
-            touchTitle = "Right players";  // Pour les joueurs de droite
+            touchTitle = "Right players";
         }
     }
 
-    // Si 'noControls' est vrai (pour les joueurs supplémentaires dans certains modes), on n'ajoute pas les champs pour les touches
     if (noControls) {
-        column.appendChild(playerContainer); // Ajouter seulement le champ du nom
+        column.appendChild(playerContainer);
         return;
     }
 
-    // Conteneur pour les touches du joueur
     const divKeys = document.createElement('div');
     divKeys.classList.add('player-controls', 'mb-3');
 
-    // Ajoute le titre des paires de touches pour le mode tournament
     if (mode === 'tournament') {
-        const touchTitleElement = document.createElement('h5');  // Change <h6> en <h5>
+        const touchTitleElement = document.createElement('h5');
         touchTitleElement.textContent = touchTitle;
-        touchTitleElement.classList.add('text-center', 'mt-3', 'mb-3');  // Ajoute les mêmes classes que pour les titres des joueurs
-        divKeys.appendChild(touchTitleElement);  // Ajoute le titre au-dessus des touches
+        touchTitleElement.classList.add('text-center', 'mt-3', 'mb-3');
+        divKeys.appendChild(touchTitleElement);
     }
-    
 
     divKeys.innerHTML += `
         <div class="mb-2 d-flex align-items-center mx-3">
@@ -207,18 +193,16 @@ function addPlayerField(index, noControls = false) {
             </div>
         </div>
     `;
-    playerContainer.appendChild(divKeys); // Ajout des touches au conteneur principal du joueur
+    playerContainer.appendChild(divKeys);
 
-    // Ajoute le conteneur complet du joueur à la colonne correspondante
     if (mode === 'tournament') {
-        column.appendChild(divKeys);  // Ajoute les touches en premier
-        column.appendChild(playerContainer);  // Ajoute ensuite le joueur
+        column.appendChild(divKeys);
+        column.appendChild(playerContainer);
     } else {
-        playerContainer.appendChild(divKeys);  // Pour les autres modes, ajoute les touches dans le conteneur du joueur
-        column.appendChild(playerContainer);  // Ajoute le joueur complet à la colonne
+        playerContainer.appendChild(divKeys);
+        column.appendChild(playerContainer);
     }
 
-    // Ajoute des écouteurs d'événements pour les champs Up et Down avec validation
 	document.getElementById(`player${index}Up`).addEventListener('keydown', function(event) {
 		event.preventDefault();
 		const key = event.key;
@@ -231,9 +215,17 @@ function addPlayerField(index, noControls = false) {
 		else if (key === "ArrowRight") displayValue = "→";
 	
 		// Vérification pour n'autoriser que les lettres minuscules, chiffres, et flèches directionnelles
-		if ((/^[a-z0-9]$/.test(key)) || ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-			this.value = displayValue; // Affiche l'icône
-			this.setAttribute('data-key', key); // Stocke la vraie touche dans un attribut data-key
+		if ((/^[a-z0-9]$/.test(key)) || ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
+            if(event.key != 'Tab')
+            {
+			    this.value = displayValue; // Affiche l'icône
+			    this.setAttribute('data-key', key); // Stocke la vraie touche dans un attribut data-key
+            }
+            else
+            {
+                event.preventDefault();
+                document.getElementById(`player${index}Down`).focus(); // Passer au champ suivant (Down key)
+            }
 		} else {
 			alert("Only lowercase letters, numbers, and arrow keys are allowed.");
 		}
@@ -251,22 +243,41 @@ function addPlayerField(index, noControls = false) {
 		else if (key === "ArrowRight") displayValue = "→";
 	
 		// Vérification pour n'autoriser que les lettres minuscules, chiffres, et flèches directionnelles
-		if ((/^[a-z0-9]$/.test(key)) || ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-			this.value = displayValue; // Affiche l'icône
-			this.setAttribute('data-key', key); // Stocke la vraie touche dans un attribut data-key
+		if ((/^[a-z0-9]$/.test(key)) || ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
+            if(event.key != 'Tab')
+            {
+			    this.value = displayValue; // Affiche l'icône
+			    this.setAttribute('data-key', key); // Stocke la vraie touche dans un attribut data-key
+            }
+            else
+            {
+                event.preventDefault();
+                if (mode == 'tournament')
+                {
+                    if(index == 0)
+                        document.getElementById(`player${0}`).focus();
+                    else
+                        document.getElementById(`player${1}`).focus();
+                }
+                else
+                {
+                    const nextPlayer = document.getElementById(`player${index + 1}`);
+                    if (nextPlayer) {
+                        nextPlayer.focus(); // Passe au champ suivant (nom du joueur suivant)
+                    }
+                }
+            }
 		} else {
 			alert("Only lowercase letters, numbers, and arrow keys are allowed.");
 		}
 	});
-	
 }
-
 
 function updateAddPlayerButton() {
     const mode = document.getElementById('mode').value;
     const maxPlayers = getMaxPlayersForMode(mode);
     const playerFields = document.getElementsByClassName('player-control');
-    
+
     if (playerFields.length >= maxPlayers) {
         document.getElementById('addPlayer').style.display = 'none';
     } else {
@@ -299,52 +310,44 @@ function getMaxPlayersForMode(mode) {
 
 updateOptions();
 
-
 document.getElementById('startGame').addEventListener('click', () => {
     const mode = document.getElementById('mode').value;
     const playerFields = document.getElementsByClassName('player-control');
-    const usedKeys = new Set();  // Ensemble pour stocker les touches déjà attribuées
-    const usedNames = new Set(); // Ensemble pour stocker les noms déjà utilisés
+    const usedKeys = new Set();
+    const usedNames = new Set();
 
     let allFieldsValid = true;
 
     for (let i = 0; i < playerFields.length; i++) {
         const playerName = document.getElementById(`player${i}`).value.trim();
 
-        // Pour le mode tournament, on ne vérifie les touches que pour les deux premiers joueurs
         let upKey = '';
         let downKey = '';
 
         if (mode !== 'tournament' || i < 2) {
-            // Récupérer la vraie touche depuis 'data-key' si elle est définie
             upKey = document.getElementById(`player${i}Up`).getAttribute('data-key') || document.getElementById(`player${i}Up`).value.trim();
             downKey = document.getElementById(`player${i}Down`).getAttribute('data-key') || document.getElementById(`player${i}Down`).value.trim();
         }
 
-        // Vérification des champs vides
         if (!playerName || (mode !== 'tournament' && (!upKey || !downKey))) {
             allFieldsValid = false;
             alert(`Player ${i + 1} must have a name and keys assigned!`);
             break;
         }
 
-        // Vérification des pseudonymes en double
         if (usedNames.has(playerName)) {
             allFieldsValid = false;
             alert(`The name '${playerName}' is already used by another player. Please choose a different name.`);
             break;
         }
 
-        // Vérification des touches pour les deux premiers joueurs en mode tournament, ou pour tous les joueurs dans les autres modes
         if (mode !== 'tournament' || i < 2) {
-            // Vérification des touches en double pour le même joueur
             if (upKey === downKey) {
                 allFieldsValid = false;
                 alert(`Player ${i + 1} cannot have the same key for both Up and Down.`);
                 break;
             }
 
-            // Vérification des touches en double entre joueurs
             if (usedKeys.has(upKey)) {
                 allFieldsValid = false;
                 alert(`The key '${upKey}' is already assigned to another player.`);
@@ -356,12 +359,10 @@ document.getElementById('startGame').addEventListener('click', () => {
                 break;
             }
 
-            // Ajouter les touches utilisés dans l'ensemble
             usedKeys.add(upKey);
             usedKeys.add(downKey);
         }
 
-        // Ajouter le nom utilisé dans l'ensemble
         usedNames.add(playerName);
     }
 
@@ -374,7 +375,6 @@ document.getElementById('startGame').addEventListener('click', () => {
             let upKey = '';
             let downKey = '';
 
-            // Pour le mode tournament, récupérer uniquement les deux premières paires de touches
             if (mode !== 'tournament' || i < 2) {
                 upKey = document.getElementById(`player${i}Up`).getAttribute('data-key') || document.getElementById(`player${i}Up`).value;
                 downKey = document.getElementById(`player${i}Down`).getAttribute('data-key') || document.getElementById(`player${i}Down`).value;
@@ -393,17 +393,14 @@ document.getElementById('startGame').addEventListener('click', () => {
         const numBalls = document.getElementById('numBalls').value;
         const map = document.getElementById('map').value;
 
-        // Stocker les options dans le localStorage avant de lancer le jeu
         localStorage.setItem('gameOptions', JSON.stringify({
             mode, playerNames, playerKeys, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map
         }));
 
-        window.location.href = 'game.html'; // Rediriger vers la page du jeu
+        storeGameSession();
+        window.location.href = 'game.html';
     }
 });
-
-
-
 
 function resetToDefault() {
     document.getElementById('maxScore').value = 10;

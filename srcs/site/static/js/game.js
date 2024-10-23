@@ -1,10 +1,15 @@
-// jeu.js
-
 import { main } from '../game/games.js';
 
 document.addEventListener("DOMContentLoaded", () => {
     // Charger les options de jeu depuis localStorage
     const gameOptions = JSON.parse(localStorage.getItem('gameOptions'));
+	let gameSession = JSON.parse(localStorage.getItem('gameSession'));
+
+    // Si une session de jeu existe déjà, mettre à jour la date de début pour refléter l'actualisation de la page
+    if (gameSession) {
+        gameSession.start_date = new Date().toLocaleString();
+        localStorage.setItem('gameSession', JSON.stringify(gameSession));
+    }
 
     // Vérifier si les options existent avant de lancer le jeu
     if (gameOptions) {

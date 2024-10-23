@@ -3,7 +3,8 @@ from .models import GameSession, PlayerProfile #, Game
 # Register your models here.
 
 class GameSessionAdmin(admin.ModelAdmin):
-    list_display = ['mode', 'start_date', 'end_date', 'game_duration', 'winner_alias', 'numbers_of_players']
+   # list_display = ['mode', 'start_date', 'end_date', 'game_duration', 'winner_alias', 'numbers_of_players']
+    list_display = ['mode', 'start_date', 'end_date', 'game_duration', 'numbers_of_players']
     class Meta:
         model = GameSession
 

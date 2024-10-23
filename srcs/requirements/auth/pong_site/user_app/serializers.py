@@ -76,10 +76,19 @@ class MyCustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user:
             raise AuthenticationFailed("Invalid e-mail or password")
 
+        # Deny access to Django admin users
+        if user.is_superuser:
+           raise AuthenticationFailed("Django admin users are not allowed to login here.")
+
+        # Set user as online
+        user.is_online = True
+
+        # update only the is_online field
+        user.save(update_fields=['is_online'])
+
         if not user.is_active:
             user.is_active = True
-            user.is_online = True
-            user.save(update_fields=['is_active', 'is_online'])
+            user.save(update_fields=['is_active'])
             print(f"User {user.username} has been reactivated.")
 
         token = super().get_token(user) # generate token
@@ -133,11 +142,6 @@ class ChangePasswordSerializer(serializers.Serializer):
         validate_password_match(attrs['new_password'], attrs['new_password2'])
         return attrs
 
-    def validate_old_password(self, value):
-        user = self.context['request'].user
-        if not user.check_password(value):
-            raise ValidationError({"old_password": "The old password is incorrect."})
-        return value
 #-------------------------------------------------------------------------------------------------------------------------
 class UserIdSerializer(serializers.Serializer):
     user_id = serializers.UUIDField(required=True)

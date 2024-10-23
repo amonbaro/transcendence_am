@@ -43,7 +43,8 @@ class GameSession(models.Model):
     game_duration = models.DurationField(blank=True, null=True)
 
     # the front end sends the winner alias which is verified if it's in the players list
-    winner_alias = models.CharField(max_length=50)
+    #winner_alias = models.CharField(max_length=50)
+    #winner_alias2 = models.CharField(max_length=50, allow_blank=True, null=True)
 
     # number of player is the len of the players list
     numbers_of_players = models.SmallIntegerField(default=0)
