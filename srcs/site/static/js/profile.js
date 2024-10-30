@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const accessToken = localStorage.getItem('accessToken');
-    const profileInfo = document.getElementById('profileInfo');
+    const profileInfo = document.getElementById('profileInfoContainer');
+    const userFirstName = document.getElementById('userFirstName');
+	const userLastName = document.getElementById('userLastName');
+    const userUsername = document.getElementById('userUsername');
+	const profilePhoto = document.getElementById('profilePhoto');
+    const editOverlay = document.querySelector('.edit-overlay');
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     const changePasswordForm = document.getElementById('changePasswordForm');
     const passwordChangeMessage = document.getElementById('passwordChangeMessage');
@@ -26,17 +31,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const profileData = await response.json();
-        profileInfo.innerHTML = `
-            <img src="${profileData.profile_photo}" alt="Profile Photo" class="img-fluid rounded-circle" width="150" height="150">
-            <p><strong>Nom :</strong> ${profileData.last_name}</p>
-            <p><strong>Prénom :</strong> ${profileData.first_name}</p>
-            <p><strong>Username :</strong> ${profileData.username}</p>
-        `;
+        profilePhoto.src = profileData.profile_photo;
+        userFirstName.textContent = profileData.first_name;
+        userLastName.textContent = profileData.last_name;
+        userUsername.textContent = profileData.username;
     } catch (error) {
         console.error('Erreur lors de la récupération des données du profil:', error);
         alert('Une erreur s\'est produite. Vérifiez la console pour plus de détails.');
         window.location.href = 'login.html';
     }
+
+	// Afficher la pop-up au clic sur l'overlay
+	editOverlay.addEventListener('click', () => {
+		alert('EDIT PP OK');
+	});
 
     // Ouvrir le modal lors du clic sur le bouton "Changer le mot de passe"
     changePasswordBtn.addEventListener('click', () => {

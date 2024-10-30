@@ -1,6 +1,22 @@
-.more-marge-top
+.more-marge-top-title
 {
-	padding-top: 56px;
+	padding-top: 70px;
+}
+
+.div-custom-marge
+{
+	padding-top: 140px;
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 85%;
+}
+
+.div-custom-marge-pp
+{
+	padding-top: 70px;
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 85%;
 }
 
 .no-border
@@ -21,21 +37,106 @@
 	width: 120px;
 }
 
-/* Gradient CSS */
-.blob {
+.blob
+{
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 650px;
-    height: 650px;
-    border-radius: 30%;
-    background-image: linear-gradient(#1100ff 10%, #ff00f2);
-    filter: blur(250px);
-    transition: all 450ms ease-out;
+    width: 420px;
+    height: 420px;
+	background: radial-gradient(circle, #1100FF 0%, #8C00BA 30%, #DB008D 60%);
+    background-size: 200% 200%;
+	background-position: center;
+	animation: zoomInOut 4.2s infinite linear;
+	filter: blur(80px);
+	border-radius: 100%;
     position: fixed;
     pointer-events: none;
     left: 0;
     top: 0;
-    transform: translate(calc(-50% + 15px), -50%);
+    transform: translate(-50%, -50%);
     z-index: -1;
+	transition: transform 450ms ease-out;
 }
+
+@keyframes zoomInOut
+{
+	0% { background-size: 120% 120%; }
+	50% { background-size: 280% 280%; }
+	100% { background-size: 120% 120%; }
+}
+
+.profile-photo-wrapper
+{
+    position: relative;
+    width: 300px;
+    height: 300px;
+    border-radius: 100%;
+    overflow: hidden;
+}
+
+.profile-photo
+{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.edit-overlay
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+    border-radius: 100%;
+}
+
+.profile-photo-wrapper:hover .edit-overlay
+{
+    opacity: 1;
+}
+
+.user-username {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.user-joined-date {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.custom-size-btn
+{
+	width: 100px;
+	height: 30px;
+}
+
+.blinking-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: yellow;
+    border-radius: 50%;
+    animation: blink 2.1s step-end infinite;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+

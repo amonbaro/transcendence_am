@@ -17,10 +17,10 @@ class GameSession(models.Model):
     # First element of each tuple is the value stored in the database
     # Second element is the human-readable name
     MODE_CHOICES = [
-        (VERSUS, "versus"),
-        (TOURNAMENT, "tournament"),
-        (LAST_MAN_STANDING, "last man standing"),
-        (BRICK_BREAKER, "brick breaker")
+        (VERSUS, "Versus"),
+        (TOURNAMENT, "Tournament"),
+        (LAST_MAN_STANDING, "Last man Standing"),
+        (BRICK_BREAKER, "Brick Breaker")
     ]
 
     # the id of a session
@@ -42,10 +42,6 @@ class GameSession(models.Model):
     # duration is start_date - end_date
     game_duration = models.DurationField(blank=True, null=True)
 
-    # the front end sends the winner alias which is verified if it's in the players list
-    #winner_alias = models.CharField(max_length=50)
-    #winner_alias2 = models.CharField(max_length=50, allow_blank=True, null=True)
-
     # number of player is the len of the players list
     numbers_of_players = models.SmallIntegerField(default=0)
 
@@ -53,26 +49,31 @@ class GameSession(models.Model):
         return f"Game {self.mode} with id {self.id}"
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Database register each player in the game session.
-# E.g. for a session with 4 players, 4 PlayerProfile objects are created
-class PlayerProfile(models.Model):
+# Base model
+class BasePlayerProfile(models.Model):
     id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='player_game', null=True, blank=True)
     session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='player_game')
-    alias = models.CharField(max_length=50)
     date_played = models.DateTimeField(auto_now_add=True)
     win = models.BooleanField(default=False)
 
+# ----------------------------------------------------------------------------------------------------------------------
+# Database register each player in the game session (versus, last man or brick breaker).
+# E.g. for a session with 4 players, 4 PlayerProfile objects are created
+class GamePlayerProfile(BasePlayerProfile):
+    alias = models.CharField(max_length=50, null=True, blank=True)
+
     def __str__(self):
         if self.user:
-            return f"{self.user.username} is {self.alias}"
-        return f"Invited player with alias {self.alias}"
+            return f"Game mode: {self.session.mode} with winner {self.user.username}"
+        return f"Game mode: {self.session.mode} with winner invited player"
 # ----------------------------------------------------------------------------------------------------------------------
-#class Game(models.Model):
-#    id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-#    session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='game_session')
-#    player = models.ForeignKey(PlayerProfile, on_delete=models.CASCADE)
-#
-#    def __str__(self):
-#        return f"Game id {self.id} with mode {self.session.mode}"
-## ----------------------------------------------------------------------------------------------------------------------
+# Database register each player in tournaments
+class TournamentPlayerProfile(BasePlayerProfile):
+    alias = models.CharField(max_length=50)
+
+    def __str__(self):
+        if self.user:
+            return f"Tournament mode with winner {self.user.username} as {self.alias}"
+        return f"Tournament mode with winner invited player as {self.alias}"
+# ----------------------------------------------------------------------------------------------------------------------

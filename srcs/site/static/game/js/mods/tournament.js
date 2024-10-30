@@ -11,7 +11,7 @@ import { map4 } from '../scenes/maps/VS.js';
 
 export class Tournament {
 
-    constructor(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map) {
+    constructor(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map, langue) {
         this.gameArea = new GameArea(800, 600, canvas);
         this.playerNames = playerNames;
         this.key = key;
@@ -24,8 +24,9 @@ export class Tournament {
         this.bricks = [];
         this.bricksX = 60;
         this.bricksY = 60;
+        this.langue = langue;
 
-        this.score = new Score(ctx, font, this.gameArea, playerNames[0], playerNames[1]);
+        this.score = new Score(langue, ctx, font, this.gameArea, playerNames[0], playerNames[1]);
         
         this.currentMatch = 0;
         this.round = 1;
@@ -33,8 +34,15 @@ export class Tournament {
         this.wins = this.initializeWins(playerNames);
         this.activePlayers = playerNames.slice();
         
-        this.gameTitle = "Tournament Mode";
-        this.gameSubtitle = "First to ";
+        if (langue == 0) {
+            this.gameTitle = "Tournament Mode";
+            this.gameSubtitle = "First to ";
+        }
+        else if (langue == 1) {
+            this.gameTitle = "Mode Tournoi";
+            this.gameSubtitle = "Premier à ";
+        }
+
         this.maxScore = maxScore - 1;
         this.walls = {
             top: 'bounce',
@@ -143,7 +151,12 @@ export class Tournament {
         this.score.drawTournamentScore(this.wins, this.round, this.activePlayers);
         
         setTimeout(() => {
-            this.score.drawFlat("Press any key to start.", 30, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2)
+            if (this.langue == 0) {
+                this.score.drawFlat("Press any key to start.", 30, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2);
+            }
+            else if (this.langue == 1) {
+                this.score.drawFlat("Appuyez sur n'importe quelle touche.", 30, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2);
+            }
             waitForKeyPress(() => {
                 this.balls.forEach(ball => ball.spawn(this.gameArea, directions));
                 this.loop();
@@ -198,7 +211,12 @@ export class Tournament {
             this.isGameOver = true;
             this.score.drawEnd(1);
             setTimeout(() => {
-                this.score.drawFlat("Press any key.", 20, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 + 50)
+                if (this.langue == 0) {
+                    this.score.drawFlat("Press any key.", 20, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 + 50)
+                }
+                else if (this.langue == 1) {
+                    this.score.drawFlat("Appuyez sur une touche.", 20, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 + 50)
+                }
                 waitForKeyPress(() => {
                     this.advanceTournament(this.score.player1Name);
                 });
@@ -208,7 +226,12 @@ export class Tournament {
             this.isGameOver = true;
             this.score.drawEnd(2);
             setTimeout(() => {
-                this.score.drawFlat("Press any key.", 20, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 + 50)
+                if (this.langue == 0) {
+                    this.score.drawFlat("Press any key.", 20, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 + 50)
+                }
+                else if (this.langue == 1) {
+                    this.score.drawFlat("Appuyez sur une touche.", 20, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 + 50)
+                }
                 waitForKeyPress(() => {
                     this.advanceTournament(this.score.player2Name);
                 });
@@ -245,5 +268,3 @@ export class Tournament {
         }
     }
 }
-
-

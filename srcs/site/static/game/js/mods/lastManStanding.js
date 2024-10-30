@@ -11,7 +11,7 @@ import { map4 } from '../scenes/maps/LMS.js';
 
 export class LastManStanding {
 
-    constructor(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map) {
+    constructor(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map, langue) {
         this.gameArea = new GameArea(700, 700, canvas);
         this.playerNames = playerNames;
         this.key = key;
@@ -23,6 +23,7 @@ export class LastManStanding {
         this.bricks = [];
         this.bricksX = 60;
         this.bricksY = 60;
+        this.langue = langue;
 
         this.player1Name = `${playerNames[0]}`;
         this.player2Name = `${playerNames[1]}`;
@@ -40,10 +41,17 @@ export class LastManStanding {
 
         this.initWalls(playerNames.length);
 
-        this.score = new Score(ctx, font, this.gameArea, `${playerNames[0]}`, `${playerNames[1]}`, `${playerNames[2]}`, `${playerNames[3]}`);
+        this.score = new Score(langue, ctx, font, this.gameArea, `${playerNames[0]}`, `${playerNames[1]}`, `${playerNames[2]}`, `${playerNames[3]}`);
 
-        this.gameTitle = "Last Man Standing Mode"
-        this.gameSubtitle = "Number of lives : ";
+        if (langue == 0) {
+            this.gameTitle = "Last Man Standing Mode";
+            this.gameSubtitle = "Number of lives : ";
+        }
+        else if (langue == 1) {
+            this.gameTitle = "Mode Dernier debout";
+            this.gameSubtitle = "Nombre de vies : ";
+        }
+
         this.maxScore = maxScore - 1;
 
         if (map == 1)
@@ -123,7 +131,12 @@ export class LastManStanding {
         this.drawScores();
 
         setTimeout(() => {
-            this.score.drawFlat("Press any key to start.", 30, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2)
+            if (this.langue == 0) {
+                this.score.drawFlat("Press any key to start.", 30, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2)
+            }
+            else if (this.langue == 1) {
+                this.score.drawFlat("Appuyez sur n'importe quelle touche.", 30, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2)
+            }
             waitForKeyPress(() => {
                 this.balls.forEach(ball => ball.spawn(this.gameArea, directions));
                 this.loop();
@@ -144,7 +157,7 @@ export class LastManStanding {
 
     loop() {
         if (this.isGameOver) {
-            return;  // Arrêter la boucle de jeu
+            return;  // ArrÃªter la boucle de jeu
         }
         this.gameArea.clear(this.ctx);
 

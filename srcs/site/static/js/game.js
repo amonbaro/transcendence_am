@@ -27,7 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
             parseInt(ballSpeed),            // Vitesse de la balle
             parseInt(ballAcceleration),     // Accélération de la balle
             parseInt(numBalls),             // Nombre de balles
-            parseInt(map)                   // Carte
+            parseInt(map),                   // Carte
+			0
         );
     } else {
         alert("No game options found!");

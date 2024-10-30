@@ -5,66 +5,19 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import generics, settings
 from rest_framework.views import APIView
-from .models import GameSession, PlayerProfile
-from .serializers import StartGameSessionSerializer, UserIdSerializer #,  RegisterPlayerWinSerializer
+from .models import GameSession, GamePlayerProfile, TournamentPlayerProfile
+from .serializers import RegisterGameSessionSerializer, RegisterTournamentSessionSerializer , UserIdSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from friends_app.models import FriendRequest
 from user_app.models import User
 from friends_app.views import are_friends
+from itertools import chain
 
 User = get_user_model()
 
 
-## ----------------------------------------------------------------------------------------------------------------------
-#class StartGameSessionView(generics.CreateAPIView):
-#    serializer_class = StartGameSessionSerializer
-#
-#    def create(self, request, *args, **kwargs):
-#        serializer = self.get_serializer(data=request.data)
-#        serializer.is_valid(raise_exception=True)
-#
-#        mode = serializer.validated_data['session']
-#        players = serializer.validated_data['players']
-#
-#        session = GameSession.objects.create(mode=mode.get('mode'), numbers_of_players=len(players))
-#
-#        for player in players:
-#            if player['user'] is None:
-#                user = None
-#            else:
-#                user_id = player['user']
-#                user = User.objects.get(id=user_id)
-#            PlayerProfile.objects.create(alias=player['alias'], session=session, user=user)            
-#        return Response({"session_id": session.id}, status=status.HTTP_201_CREATED)
-## ----------------------------------------------------------------------------------------------------------------------
-#
-#class RegisterPlayerWinView(generics.UpdateAPIView):
-#    serializer_class = RegisterPlayerWinSerializer
-#    http_method_names = ['patch']
-#
-#    def patch(self, request, *args, **kwargs):
-#        serializer = self.get_serializer(data=request.data)
-#        serializer.is_valid(raise_exception=True)
-#        session_id = serializer.validated_data.get('session_id')
-#        alias = serializer.validated_data.get('alias')
-#
-#        try:
-#            session = GameSession.objects.get(id=session_id)
-#        except GameSession.DoesNotExist:
-#            return Response({"error": f"Game session {session_id} not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#        try:
-#            player = PlayerProfile.objects.get(session=session, alias=alias)
-#        except PlayerProfile.DoesNotExist:
-#            return Response({"error": f"Player with display name {alias} not found in session {session_id}."}, status=status.HTTP_404_NOT_FOUND)
-#
-#        player.win = True
-#        player.save()
-#        return Response({"winner_id": f"{player.user.id} in game {session_id}."}, status=status.HTTP_200_OK)
-#
 # ----------------------------------------------------------------------------------------------------------------------
-
 def format_duration(duration):
     total_secondes = duration.total_seconds()
     days = total_secondes // (24 * 3600)
@@ -83,86 +36,146 @@ def format_duration(duration):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-class RegisterGameSessionView(generics.CreateAPIView):
-    serializer_class = StartGameSessionSerializer
+# to add query sets : https://sentry.io/answers/combine-querysets-django/
+def get_user_stats(user):
+    # initialize the result as dictionary.
+    result = {}
+
+    game_player_profiles = GamePlayerProfile.objects.filter(user=user)
+    tournament_player_profiles = TournamentPlayerProfile.objects.filter(user=user)
+
+    result['total_played'] = game_player_profiles.count() + tournament_player_profiles.count()
+    result['total_wins']  = game_player_profiles.filter(win=True).count() + tournament_player_profiles.filter(win=True).count()
+
+    for mode in GameSession.MODE_CHOICES:
+        total = game_player_profiles.filter(session__mode=mode[0]).count()
+        result[f'{mode[0]}_played'] = total if total else 0
+        wins = game_player_profiles.filter(session__mode=mode[0], win=True).count()
+        result[f'{mode[0]}_wins'] = wins if wins else 0
+
+    result['TN_played'] = tournament_player_profiles.count()
+    result['TN_wins'] = tournament_player_profiles.filter(win=True).count()
+    return result
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def get_user_match_history(user):
+    game_player_profiles = GamePlayerProfile.objects.filter(user=user)
+
+    # initialize the result as list.
+    match_history = []
+
+    for player in game_player_profiles:
+        if player.session.numbers_of_players == 4 and (player.session.mode == 'VS' or player.session.mode == 'BB'):
+            if player.win:
+                teammate = GamePlayerProfile.objects.filter(session=player.session, win=True).exclude(id=player.id).first()
+            else:
+                teammate = GamePlayerProfile.objects.filter(session=player.session, win=False).exclude(id=player.id).first()
+            match_history.append(
+                {
+                    "mode": player.session.mode,
+                    "date_played": player.session.start_date.strftime('%d %b %Y'),
+                    "duration": format_duration(player.session.game_duration),
+                    "number_of_players": player.session.numbers_of_players,
+                    "teammate" : teammate.alias if teammate.alias else teammate.user.username,
+                    "result": "win" if player.win else "lost"
+                }
+            )
+        else:
+            match_history.append(
+                {
+                    "mode": player.session.mode,
+                    "date_played": player.session.start_date.strftime('%d %b %Y'),
+                    "duration": format_duration(player.session.game_duration),
+                    "number_of_players": player.session.numbers_of_players,
+                    "result": "win" if player.win else "lost"
+                }
+            )
+    tournament_player_profiles = TournamentPlayerProfile.objects.filter(user=user)
+    for player in tournament_player_profiles:
+        match_history.append(
+            {
+                "mode": "TN",
+                "date_played": player.session.start_date.strftime('%d %b %Y'),
+                "duration": format_duration(player.session.game_duration),
+                "number_of_players": player.session.numbers_of_players,
+                "display_name": player.alias,
+                "result": "win" if player.win else "lost"
+            }
+        )
+    match_history = sorted(match_history, key=lambda x: x['date_played'], reverse=True)
+    return match_history
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+class BaseRegisterSessionView(generics.CreateAPIView):
     permission_classes = [AllowAny]
+    serializer_class = None
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         mode = serializer.validated_data['session']
         players = serializer.validated_data['players']
-        winner_alias1 = serializer.validated_data['winner_alias']
-        winner_alias2 = serializer.validated_data['winner_alias2']
-
+        winner1 = serializer.validated_data['winner1']
+        winner2 = serializer.validated_data.get('winner2')
         end_date = datetime.now()
+
         try:
             start_date = datetime.strptime(serializer.validated_data['start_date'], "%d/%m/%Y %H:%M:%S")
+            if start_date > end_date:
+                return Response({"error": "Invalid date format. Start date is in the future."}, status=status.HTTP_400_BAD_REQUEST)
             diff = end_date - start_date
         except ValueError:
             return Response({"error": "Invalid date format. Please use 'dd/mm/yyyy HH:MM:SS'"}, status=status.HTTP_400_BAD_REQUEST)
 
-        #session = GameSession.objects.create(mode=mode.get('mode'), numbers_of_players=len(players), game_duration=diff, start_date=start_date, winner_alias=winner_alias)
-        session = GameSession.objects.create(mode=mode.get('mode'), numbers_of_players=len(players), game_duration=diff, start_date=start_date)
+        session = self.create_session(mode, players, diff, start_date)
 
+        self.register_players(session, players, winner1, winner2)
+
+        return Response({"message": "Game session registered successfully!"}, status=status.HTTP_201_CREATED)
+
+    def create_session(self, mode, players, diff, start_date):
+        return GameSession.objects.create(mode=mode.get('mode'), numbers_of_players=len(players), game_duration=diff, start_date=start_date)
+
+    def register_players(self, session, players, winner1, winner2):
+        raise NotImplementedError
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+class RegisterGameSessionView(BaseRegisterSessionView):
+    serializer_class = RegisterGameSessionSerializer
+
+    def register_players(self, session, players, winner1, winner2):
         for player in players:
             try:
                 user_id = player['user']
                 user = User.objects.get(id=user_id)
             except User.DoesNotExist:
                 user = None
-            if player['alias'] == winner_alias1 or (winner_alias2 and player['alias'] == winner_alias2):
-                PlayerProfile.objects.create(alias=player['alias'], session=session, user=user, win=True)
+            if (player['alias'] == winner1 or (winner2 and player['alias'] == winner2)) or \
+                    (user and (user.username == winner1 or (winner2 and user.username == winner2))):
+                GamePlayerProfile.objects.create(alias=player['alias'], session=session, user=user, win=True)
             else:
-                PlayerProfile.objects.create(alias=player['alias'], session=session, user=user)
-
-        # Get the winner profile to access the user id. We need to return the winner id in the response
-        winner_profile1 = PlayerProfile.objects.get(session=session, alias=winner_alias1)
-
-        # If the winner is registered user -> get the id, else -> return NONE
-        winner_id1 = winner_profile1.user.id if winner_profile1.user else None
-
-        if not winner_alias2:
-            return Response({"session_id": session.id, "winner_id1": winner_id1 }, status=status.HTTP_201_CREATED)
-        else:
-            winner_profile2 = PlayerProfile.objects.get(session=session, alias=winner_alias2)
-            winner_id2 = winner_profile2.user.id if winner_profile2.user else None
-            return Response({"session_id": session.id, "winner_id1": winner_id1, "winner_id2": winner_id2 }, status=status.HTTP_201_CREATED)
+                GamePlayerProfile.objects.create(alias=player['alias'], session=session, user=user)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def get_user_stats(user):
-    # initialize the result as dictionary.
-    result = {}
+class RegisterTournamentSessionView(BaseRegisterSessionView):
+    serializer_class = RegisterTournamentSessionSerializer
 
-    player_profiles = PlayerProfile.objects.filter(user=user)
-    total_games_played = player_profiles.count()
-    total_games_won = player_profiles.filter(win=True).count()
-
-    versus_played = player_profiles.filter(session__mode=GameSession.VERSUS).count()
-    versus_won = player_profiles.filter(session__mode=GameSession.VERSUS, win=True).count()
-
-    tournament_played = player_profiles.filter(session__mode=GameSession.TOURNAMENT).count()
-    tournament_won = player_profiles.filter(session__mode=GameSession.TOURNAMENT, win=True).count()
-
-    last_man_standing_played = player_profiles.filter(session__mode=GameSession.LAST_MAN_STANDING).count()
-    last_man_standing_won = player_profiles.filter(session__mode=GameSession.LAST_MAN_STANDING, win=True).count()
-
-    brick_breaker_played = player_profiles.filter(session__mode=GameSession.BRICK_BREAKER).count()
-    brick_breaker_won = player_profiles.filter(session__mode=GameSession.BRICK_BREAKER, win=True).count()
-
-    result['total_games_played'] = total_games_played
-    result['total_games_won'] = total_games_won
-    result['versus_played'] = versus_played
-    result['versus_won'] = versus_won
-    result['tournament_played'] = tournament_played
-    result['tournament_won'] = tournament_won
-    result['last_man_standing_played'] = last_man_standing_played
-    result['last_man_standing_won'] = last_man_standing_won
-    result['brick_breaker_played'] = brick_breaker_played
-    result['brick_breaker_won'] = brick_breaker_won
-
-    return result
+    def register_players(self, session, players, winner1, winner2):
+        for player in players:
+            try:
+                user_id = player['user']
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                user = None
+            if player['alias'] == winner1:
+                TournamentPlayerProfile.objects.create(alias=player['alias'], session=session, user=user, win=True)
+            else:
+                TournamentPlayerProfile.objects.create(alias=player['alias'], session=session, user=user)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -178,37 +191,14 @@ class ShowOtherUserStatsView(APIView):
             # Get other user instance. If not found -> raise exception 404
             other_user = User.objects.get(id=other_user_id)
 
-            # Declare an empty dictionary to store the result
-            result = {}
-
             # Check for errors
-            if not other_user.last_login:
-                return Response({"error": "User has never logged in."}, status=status.HTTP_400_BAD_REQUEST)
-            # permission_classes checks if user is active ???
-            elif not other_user.is_active:
-                return Response({"error": "User is not active."}, status=status.HTTP_404_NOT_FOUND)
-
-            # always add username no matter if the request is authenticated or not
-            result['username'] = other_user.username
-
-            # if the request is authenticated -> add info about the friend status, first_name and last_name
-            if request.user.is_authenticated:
-                if other_user == request.user:
-                    return Response({"error": "Call show-current-user-stats."}, status=status.HTTP_400_BAD_REQUEST)
-                if are_friends(request.user, other_user):
-                    is_friend = True
-                result['first_name'] = other_user.first_name
-                result['last_name'] = other_user.last_name
-                result['is_online'] = other_user.is_online
-                result['is_friend'] = is_friend
+            if not other_user.is_active or not other_user.last_login:
+                return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
             # Get user stats
             user_stats = get_user_stats(other_user)
 
-            # Add user stats to the result
-            result.update(user_stats)
-
-            return Response(result, status=status.HTTP_200_OK)
+            return Response(user_stats, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -220,36 +210,25 @@ class ShowCurrentUserStatsView(generics.RetrieveAPIView):
         current_user = request.user
 
         # permission_classes checks if user is active ???
-        if not current_user.is_active:
-            return Response({"error": "User is not active."}, status=status.HTTP_404_NOT_FOUND)
+        if not current_user.is_active or not current_user.last_login:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response( get_user_stats(current_user), status=status.HTTP_200_OK)
 
-# ----------------------------------------------------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------------------------------------------------
 class CurrentUserMatchHistoryView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
-        user = request.user
+        current_user = request.user
 
         # permission_classes checks if user is active ???
-        if not user.is_active:
-            return Response({"error": "User is not active."}, status=status.HTTP_404_NOT_FOUND)
+        if not current_user.is_active or not current_user.last_login:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        player_profiles = PlayerProfile.objects.filter(user=user)
-        match_history = []
-        for player in player_profiles:
-            match_history.append(
-                {
-                    "mode": player.session.mode,
-                    "date_played": player.session.start_date.strftime('%d %b %Y'),
-                    "duration": format_duration(player.session.game_duration),
-                    "alias": player.alias,
-                    "number_of_players": player.session.numbers_of_players,
-                    "result": "win" if player.win else "lost"
-                }
-            )
+        match_history = get_user_match_history(current_user)
         return Response(match_history, status=status.HTTP_200_OK)
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 class OtherUserMatchHistoryView(APIView):
@@ -265,61 +244,13 @@ class OtherUserMatchHistoryView(APIView):
             if other_user == request.user:
                 return Response({"error": "Call show-current-user-match-history."}, status=status.HTTP_400_BAD_REQUEST)
             # permission_classes checks if user is active ???
-            elif not other_user.is_active:
-                return Response({"error": "User is not active."}, status=status.HTTP_404_NOT_FOUND)
-            elif not other_user.last_login:
-                return Response({"error": "User has never logged in."}, status=status.HTTP_404_NOT_FOUND) # should be HTTP_404_NOT_FOUND
+            elif not other_user.is_active or not other_user.last_login:
+                return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
             elif not are_friends(request.user, other_user):
                 return Response({"error": "User is not your friend."}, status=status.HTTP_401_UNAUTHORIZED)
 
-            player_profiles = PlayerProfile.objects.filter(user=other_user)
-            match_history = []
-            for player in player_profiles:
-                match_history.append(
-                    {
-                        "mode": player.session.mode,
-                        "date_played": player.session.start_date.strftime('%d %b %Y'),
-                        "duration": format_duration(player.session.game_duration),
-                        "alias": player.alias,
-                        "number_of_players": player.session.numbers_of_players,
-                        "result": "win" if player.win else "lost"
-                    }
-                )
+            match_history = get_user_match_history(other_user)
             return Response(match_history, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 # ----------------------------------------------------------------------------------------------------------------------
-# If there are two winners per game, send their aliases in a single string separated by a comma with join method.
-# Do the same for the usernames.
-class ShowAllGamesView(generics.ListAPIView):
-    http_method_names = ['get']
-    permission_classes = [AllowAny]
-    def get(self, request, *args, **kwargs):
-        game_sessions = GameSession.objects.all()
-        game_sessions_list = []
-
-        for session in game_sessions:
-            winners = PlayerProfile.objects.filter(session=session, win=True)
-
-            winners_usernames = []
-            winners_aliases = []
-
-            for winner in winners:
-                if winner.user:
-                    winner_username = winner.user.username if winner.user.is_active else "deactivated user"
-                else:
-                    winner_username = "invited player"
-                winners_usernames.append(winner_username)
-                winners_aliases.append(winner.alias)
-
-            game_sessions_list.append(
-                {
-                    "mode": session.mode,
-                    "date_played": session.start_date.strftime('%d %b %Y'),
-                    "game_duration": format_duration(session.game_duration),
-                    "number_of_players": session.numbers_of_players,
-                    "winner_alias": ', '.join(winners_aliases), # join method of a list
-                    "winner_username": ', '.join(winners_usernames), # # join method of a list
-               }
-            )
-        return Response(game_sessions_list, status=status.HTTP_200_OK)

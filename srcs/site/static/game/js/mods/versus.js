@@ -11,7 +11,7 @@ import { map4 } from '../scenes/maps/VS.js';
 
 export class Versus {
 
-    constructor(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map) {
+    constructor(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map, langue) {
         this.gameArea = new GameArea(800, 600, canvas);
         this.playerNames = playerNames;
         this.key = key;
@@ -23,6 +23,7 @@ export class Versus {
         this.bricks = [];
         this.bricksX = 60;
         this.bricksY = 60;
+        this.langue = langue;
 
         
         let team1Names = `${playerNames[0]}`;
@@ -32,10 +33,17 @@ export class Versus {
             team2Names = `${playerNames[2]} & ${playerNames[3]}`;
         }
 
-        this.score = new Score(ctx, font, this.gameArea, team1Names, team2Names);
+        this.score = new Score(langue, ctx, font, this.gameArea, team1Names, team2Names);
 
-        this.gameTitle = "Versus Mode"
-        this.gameSubtitle = "First to ";
+        if (langue == 0) {
+            this.gameTitle = "Versus Mode";
+            this.gameSubtitle = "First to ";
+        }
+        else if (langue == 1) {
+            this.gameTitle = "Mode Versus";
+            this.gameSubtitle = "Premier à ";
+        }
+
         this.maxScore = maxScore - 1;
         this.walls = {
             top: 'bounce',
@@ -111,7 +119,12 @@ export class Versus {
         this.score.drawScore();
 
         setTimeout(() => {
-            this.score.drawFlat("Press any key to start.", 30, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2)
+            if (this.langue == 0) {
+                this.score.drawFlat("Press any key to start.", 30, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2);
+            }
+            else if (this.langue == 1) {
+                this.score.drawFlat("Appuyez sur n'importe quelle touche.", 30, 'white', 'center', this.ctx.canvas.width / 2, this.ctx.canvas.width / 2);
+            }
             waitForKeyPress(() => {
                 this.balls.forEach(ball => ball.spawn(this.gameArea, directions));
                 this.loop();

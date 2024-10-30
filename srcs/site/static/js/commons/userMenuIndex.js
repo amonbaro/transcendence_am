@@ -120,13 +120,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 const blob = document.querySelector('.blob');
 
 document.addEventListener('mousemove', (e) => {
-	const { clientX, clientY } = e;
-	
-	// Transition plus douce
-	blob.style.transform = `translate3d(calc(${clientX}px - 50%), calc(${clientY}px - 50%), 0)`;
-	
-	// Animation de la couleur
-	const xPercentage = (clientX / window.innerWidth) * 100;
-	const yPercentage = (clientY / window.innerHeight) * 100;
-	blob.style.backgroundPosition = `${xPercentage}% ${yPercentage}%`;
+    const { clientX, clientY } = e;
+
+    // Récupérer la vitesse de déplacement de la souris
+    const speed = Math.min(10, Math.hypot(e.movementX, e.movementY) / 10);
+
+    // Ajuster la taille du blob pour donner un effet d'étirement
+    blob.style.transform = `translate3d(calc(${clientX}px - 50%), calc(${clientY}px - 50%), 0) scale(${1 + speed / 10})`;
 });
+

@@ -1,12 +1,8 @@
-// currUserHistory.js
+// currUserHistory.js (modifié)
 
 document.addEventListener('DOMContentLoaded', () => {
-    const showHistoryBtn = document.getElementById('showHistoryBtn');
-    const matchHistoryContainer = document.getElementById('matchHistoryContainer');
-
-    showHistoryBtn.addEventListener('click', async () => {
-        await fetchUserMatchHistory();
-    });
+    const historyContainerLink = document.querySelector('[href="#matchHistoryContainer"]');
+    historyContainerLink.addEventListener('click', fetchUserMatchHistory);
 });
 
 async function fetchUserMatchHistory() {
@@ -41,66 +37,74 @@ async function fetchUserMatchHistory() {
 
 function displayMatchHistory(matches) {
     const matchHistoryContainer = document.getElementById('matchHistoryContainer');
-    matchHistoryContainer.innerHTML = ''; // Clear previous content
+    matchHistoryContainer.innerHTML = ''; // Efface le contenu précédent
 
     if (matches.length === 0) {
         matchHistoryContainer.innerHTML = '<p>Aucune partie jouée pour le moment.</p>';
         return;
     }
 
-    const listContainer = document.createElement('ul');
-    listContainer.classList.add('list-group');
-
     matches.forEach((match, index) => {
-        const listItem = document.createElement('li');
-        listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+        const matchCard = document.createElement('div');
+        matchCard.classList.add('card', 'mb-3', 'w-auto'); // Style de carte pour chaque fiche
+        matchCard.style.border = "1px solid";
+        matchCard.style.backgroundColor = `var(${match.result === 'win' ? '--bs-success-bg-subtle' : '--bs-danger-bg-subtle'})`;
+        matchCard.style.borderColor = `var(${match.result === 'win' ? '--bs-success-border-subtle' : '--bs-danger-border-subtle'})`;
 
-        // Afficher le mode et la date de la partie
-        const matchInfo = document.createElement('div');
-        matchInfo.textContent = `${match.mode} - ${match.date_played}`;
+        // Convertir le mode en texte complet
+        const modeText = getModeText(match.mode);
 
-        // Appliquer la couleur en fonction du résultat
-        if (match.result === 'win') {
-            listItem.classList.add('list-group-item-success');
-        } else {
-            listItem.classList.add('list-group-item-danger');
-        }
-
-        // Bouton pour dérouler les détails
-        const toggleButton = document.createElement('button');
-        toggleButton.classList.add('btn', 'btn-secondary', 'btn-sm');
-        toggleButton.textContent = 'Détails';
-        toggleButton.setAttribute('data-bs-toggle', 'collapse');
-        toggleButton.setAttribute('data-bs-target', `#matchDetails${index}`);
-
-        // Conteneur pour les détails de la partie (caché par défaut)
-        const detailsContainer = document.createElement('div');
-        detailsContainer.classList.add('collapse', 'mt-2');
-        detailsContainer.id = `matchDetails${index}`;
-
-        // Ajouter les détails de la partie
-        const detailsContent = document.createElement('div');
-        detailsContent.classList.add('text-start');
-        detailsContent.innerHTML = `
-            <p><strong>Durée :</strong> ${match.duration}</p>
-            <p><strong>Nombre de joueurs :</strong> ${match.number_of_players}</p>
+        matchCard.innerHTML = `
+            <div class="row g-0 align-items-center">
+                <div class="col-md-8 d-flex flex-column justify-content-center">
+                    <div class="card-body">
+                        <h5 class="card-title">${modeText}</h5>
+						<p class="card-text user-joined-date">${formatDate(match.date_played)}</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-center justify-content-center">
+                    <button class="btn ${match.result === 'win' ? 'btn-outline-success' : 'btn-outline-danger'}" data-bs-toggle="collapse" data-bs-target="#matchDetails${index}">
+                        Détails
+                    </button>
+                </div>
+            </div>
+            <div id="matchDetails${index}" class="collapse">
+                <!-- Détails supplémentaires affichés en accordéon -->
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <p><strong>Durée :</strong> ${match.duration}</p>
+                    <p><strong>Nombre de joueurs :</strong> ${match.number_of_players}</p>
+                    ${match.teammate ? `<p><strong>Coéquipier :</strong> ${match.teammate}</p>` : ''}
+                </div>
+            </div>
         `;
 
-        // Afficher les alias des gagnants
-        if (match.result !== 'win') {
-            detailsContent.innerHTML += `<p><strong>Gagnants :</strong> ${match.alias}</p>`;
-        } else if (match.alias.includes(' & ')) {
-            const otherWinners = match.alias.split(' & ').filter(alias => alias !== 'registered player 2');
-            detailsContent.innerHTML += `<p><strong>Gagnants :</strong> ${otherWinners.join(', ')}</p>`;
-        }
-
-        detailsContainer.appendChild(detailsContent);
-        listItem.appendChild(matchInfo);
-        listItem.appendChild(toggleButton);
-        listItem.appendChild(detailsContainer);
-
-        listContainer.appendChild(listItem);
+        matchHistoryContainer.appendChild(matchCard);
     });
+}
 
-    matchHistoryContainer.appendChild(listContainer);
+// Helper functions
+function getModeText(mode) {
+    switch (mode) {
+        case 'VS':
+            return 'Versus';
+        case 'LS':
+            return 'Last Man Standing';
+        case 'BB':
+            return 'Brick Breaker';
+        case 'TN':
+            return 'Tournament';
+        default:
+            return mode;
+    }
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
 }

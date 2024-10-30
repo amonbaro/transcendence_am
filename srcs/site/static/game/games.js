@@ -5,7 +5,7 @@ import { LastManStanding } from './js/mods/lastManStanding.js';
 import { BrickBreaker } from './js/mods/brickBreaker.js';
 
 // Export de la fonction main
-export function main(gameMode, playerNames, key, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map) {
+export function main(gameMode, playerNames, key, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map, langue) {
     // Sélectionner le canvas et le contexte
     const canvas = document.getElementById("webgl1");
     const ctx = canvas.getContext("2d");
@@ -32,19 +32,19 @@ export function main(gameMode, playerNames, key, maxScore, paddleSpeed, paddleSi
         if (gameMode === 'versus') {
             if (playerNames.length == 3 || playerNames.length > 4)
                 throw new Error('Not a good players count: ' + playerNames.length + '. Versus mod takes 2 or 4 players.');
-            new Versus(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map);
+            new Versus(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map, langue);
         } else if (gameMode === 'tournament') {
             if (playerNames.length > 10)
                 throw new Error('Not a good players count: ' + playerNames.length + '. Tournament mod takes 2 to 10 players.');
-            new Tournament(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map);
+            new Tournament(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map, langue);
         } else if (gameMode === 'lastManStanding') {
             if (playerNames.length > 4)
                 throw new Error('Not a good players count: ' + playerNames.length + '. Last Man Standing mod takes 2, 3 or 4 players.');
-            new LastManStanding(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map);
+            new LastManStanding(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map, langue);
         } else if (gameMode === 'brickBreaker') {
             if (playerNames.length == 3 || playerNames.length > 4)
                 throw new Error('Not a good players count: ' + playerNames.length + '. BrickBreaker mod takes 1 or 2 players.');
-            new BrickBreaker(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map);
+            new BrickBreaker(canvas, playerNames, key, ctx, font, maxScore, paddleSpeed, paddleSize, bounceMode, ballSpeed, ballAcceleration, numBalls, map, langue);
         } else
             throw new Error('Unknown game mode: ' + gameMode + '. Available modes are: versus, tournament, lastManStanding, brickBreaker.');
 
@@ -85,5 +85,3 @@ Voici un exemple basique de preset :
     main('versus', ['Adri', 'Dani'], [['w','s'],['ArrowUp','ArrowDown']], 10, 5, 100, true, 5, 1, 1, 1);
 
  */
-
-

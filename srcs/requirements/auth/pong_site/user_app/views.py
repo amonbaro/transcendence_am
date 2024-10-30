@@ -201,10 +201,8 @@ class GetUserFromIDView(APIView):
         user_id = serializer.validated_data['user_id']
         try:
             user = User.objects.get(id=user_id)
-            if not user.last_login:
-                return Response({"error": "User has never logged in."}, status=status.HTTP_400_BAD_REQUEST)
-            elif not user.is_active:
-                return Response({"error": "User is not active."}, status=status.HTTP_404_NOT_FOUND)
+            if not user.is_active or not user.last_login:
+                return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
             if request.user.is_authenticated:
                 user_data = get_user_data_auth(request.user, user)

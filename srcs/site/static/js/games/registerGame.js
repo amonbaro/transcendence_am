@@ -96,9 +96,11 @@ export function storeGameSession() {
 
     if (gameSessionOptions) {
         const { mode, playerNames } = gameSessionOptions;
+
+        // Structurer les joueurs avec la clé user ou alias selon le cas
         const players = playerNames.map((name) => {
             const userId = verifiedUsers.get(name);
-            return userId ? { user: userId, alias: name } : { alias: name };
+            return userId ? { user: userId } : { alias: name };
         });
 
         const sessionData = {
@@ -114,17 +116,20 @@ export function storeGameSession() {
 // Fonction pour envoyer les données à l'API après la fin de la partie
 export function registerGameWinner(winnerAlias) {
     const sessionData = JSON.parse(localStorage.getItem('gameSession'));
+
     if (sessionData) {
-        // Vérifier si winnerAlias contient deux gagnants séparés par " & "
+        // Diviser les gagnants en winner1 et winner2 si nécessaire
         const winners = winnerAlias.split(' & ').map(name => name.trim());
-        
-        if (winners.length === 2) {
-            sessionData.winner_alias = winners[0];
-            sessionData.winner_alias2 = winners[1];
+
+        // Affecter winner1 et conditionnellement winner2 si le mode est VS ou BB et qu’il y a un second gagnant
+        sessionData.winner1 = winners[0];
+
+        const mode = sessionData.session.mode;
+        if ((mode === 'VS' || mode === 'BB') && winners.length === 2) {
+            sessionData.winner2 = winners[1];
         } else {
-            sessionData.winner_alias = winners[0];
-            // Supprimer le champ winner_alias2 s'il n'est pas nécessaire pour éviter l'erreur côté API
-            delete sessionData.winner_alias2;
+            // Supprimer winner2 s'il existe, pour respecter l'API
+            delete sessionData.winner2;
         }
 
         sendGameSessionToAPI(sessionData);

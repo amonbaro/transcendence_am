@@ -1,7 +1,7 @@
 import { registerGameWinner } from '../../../js/games/registerGame.js';
 
 export class Score {
-    constructor(ctx, font, gameArea, player1Name = 'Player 1', player2Name = 'Player 2', player3Name = 'Player 3', player4Name = 'Player 4') {
+    constructor(langue, ctx, font, gameArea, player1Name = 'Player 1', player2Name = 'Player 2', player3Name = 'Player 3', player4Name = 'Player 4') {
         this.ctx = ctx;
         this.font = font;
         this.gameArea = gameArea;
@@ -14,6 +14,7 @@ export class Score {
         this.player3Score = 0;
         this.player4Score = 0;
         this.finalTournamentScore = []; //[[player1, score1], [player2, score2], ...]
+        this.langue = langue
     }
 
     incrementPlayer1Score() {
@@ -68,21 +69,32 @@ export class Score {
         this.ctx.fillStyle = 'white';
         this.ctx.textAlign = 'center';
 
+        let sentence;
+        let sentence2; 
+        if (this.langue == 0) {
+            sentence = 'just won the game!';
+            sentence2 = 'also won the game!';
+        }
+        else if (this.langue == 1) {
+            sentence = 'vien de gagner la partie!';
+            sentence2 = 'a aussi gagné la partie!';
+        }
+
         let winnerName = '';
         let secondWinnerName = '';
 
         if (winningPlayer === 1) {
             winnerName = this.player1Name;
-            this.ctx.fillText(`${this.player1Name} just won the game!`, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 50);
+            this.ctx.fillText(`${this.player1Name} ` + sentence, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 50);
         } else if (winningPlayer === 2) {
             winnerName = this.player2Name;
-            this.ctx.fillText(`${this.player2Name} just won the game!`, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 50);
+            this.ctx.fillText(`${this.player2Name} ` + sentence, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 50);
         } else if (winningPlayer === 3) {
             winnerName = this.player3Name;
-            this.ctx.fillText(`${this.player3Name} just won the game!`, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 50);
+            this.ctx.fillText(`${this.player3Name} ` + sentence, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 50);
         } else if (winningPlayer === 4) {
             winnerName = this.player4Name;
-            this.ctx.fillText(`${this.player4Name} just won the game!`, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 50);
+            this.ctx.fillText(`${this.player4Name} ` + sentence, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 50);
         }
 
         if (secondWinningPlayer === 1) {
@@ -96,7 +108,7 @@ export class Score {
         }
 
         if (secondWinnerName) {
-            this.ctx.fillText(`${secondWinnerName} also won the game!`, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 20);
+            this.ctx.fillText(`${secondWinnerName} ` + sentence2, this.ctx.canvas.width / 2, this.ctx.canvas.width / 2 - 20);
             registerGameWinner(`${winnerName} & ${secondWinnerName}`);
         } else {
             registerGameWinner(winnerName);
@@ -120,6 +132,13 @@ export class Score {
         this.ctx.fillStyle = 'white';
         this.ctx.textAlign = 'center';
 
+        let sentence;
+        if (this.langue == 0)
+            sentence = 'wins';
+        else if (this.langue == 1)
+            sentence = 'a gagné';
+
+
         this.ctx.fillText(`Round ${round}`, startX, startY);
         startY += 30;
 
@@ -127,9 +146,9 @@ export class Score {
     
         for (const [player, winCount] of Object.entries(wins)) {
             if (activePlayers.includes(player)) {
-                this.ctx.fillText(`${player}: ${winCount} wins`, startX, startY);
+                this.ctx.fillText(`${player}: ${winCount} ` + sentence, startX, startY);
             } else {
-                this.ctx.fillText(`${player}: ${winCount} wins`, startX, startY); 
+                this.ctx.fillText(`${player}: ${winCount} ` + sentence, startX, startY); 
                 this.ctx.beginPath();
                 this.ctx.moveTo(startX - 60, startY - 10);
                 this.ctx.lineTo(startX + 60, startY - 10);
@@ -148,15 +167,28 @@ export class Score {
         this.ctx.font = `50px ${this.font.family}`;
         this.ctx.fillStyle = 'white';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(`${winner} wins the tournament!`, this.ctx.canvas.width / 2, this.ctx.canvas.height / 2);
+
+        let sentence;
+        let sentence2; 
+        if (this.langue == 0) {
+            sentence = 'wins the tournament!';
+            sentence2 = 'rounds win';
+        }
+        else if (this.langue == 1) {
+            sentence = 'a gagné le tournoi!';
+            sentence2 = 'rounds gagnés';
+        }
+
+        this.ctx.fillText(`${winner} ` + sentence, this.ctx.canvas.width / 2, this.ctx.canvas.height / 2);
 
         this.finalTournamentScore.sort((a, b) => b[1] - a[1]); 
 
+
         const scoreboard = document.getElementById('scoreboard');
-        scoreboard.innerHTML = `<h3>Scoreboard</h3>`;
+        scoreboard.innerHTML = `<h3>Score</h3>`;
         this.finalTournamentScore.forEach(([player, winCount]) => {
             const playerScore = document.createElement('p');
-            playerScore.textContent = `${player}: ${winCount} rounds win`;
+            playerScore.textContent = `${player}: ${winCount} ` + sentence2;
             scoreboard.appendChild(playerScore);
         });
     }

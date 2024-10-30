@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const accessToken = localStorage.getItem('accessToken');
-    const profileInfo = document.getElementById('profileInfo'); // Élément de la page où les informations d'amis seront affichées
-    const friendListContainer = document.createElement('div'); // Conteneur pour la liste des amis
-    friendListContainer.id = 'friendList';
+    const friendListContainerElement = document.getElementById('friendListContainer');
 
     if (!accessToken) {
         alert('Vous devez être connecté pour accéder à cette page.');
@@ -11,7 +9,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        // Récupérer la liste des amis via l'API
         const friendsResponse = await fetch('https://localhost:8000/api/friends/show-all-friends/', {
             method: 'GET',
             headers: {
@@ -27,59 +24,193 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const friendsData = await friendsResponse.json();
 
-        // Afficher la section des amis seulement si l'utilisateur a des amis
         if (friendsData.length > 0) {
-            const friendSectionTitle = document.createElement('h3');
-            friendSectionTitle.textContent = "Amis :";
-            friendListContainer.appendChild(friendSectionTitle);
-
             friendsData.forEach(friendEntry => {
                 const friend = friendEntry.friend;
-                const friendDiv = document.createElement('div');
-                friendDiv.classList.add('friend-entry', 'd-flex', 'align-items-center', 'mb-3');
+                const friendElement = document.createElement('div');
+                friendElement.classList.add('card', 'mb-3', 'w-auto');
 
-                const friendImage = document.createElement('img');
-                friendImage.src = friend.profile_photo;
-                friendImage.alt = "Friend's profile photo";
-                friendImage.classList.add('img-fluid', 'rounded-circle', 'me-3');
-                friendImage.width = 50;
-                friendImage.height = 50;
-
-                const friendInfo = document.createElement('div');
-                friendInfo.innerHTML = `
-                    <p><strong>${friend.first_name} ${friend.last_name}</strong> (${friend.username})</p>
+                friendElement.innerHTML = `
+                    <div class="row g-0 align-items-center">
+                        <div class="col-md-2">
+                            <img src="${friend.profile_photo}" class="profile-photo" alt="${friend.username}">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title user-username">${friend.username}</h5>
+                                <p class="card-text user-joined-date">Ami depuis : ${friendEntry.timestamp}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex flex-column align-items-center justify-content-center">
+                            <button class="btn btn-light me-5 custom-size-btn d-flex justify-content-center align-items-center" data-friend-id="${friend.id}">
+                                Détails
+                            </button>
+                        </div>
+                    </div>
                 `;
+                friendListContainerElement.appendChild(friendElement);
 
-                const removeFriendButton = document.createElement('button');
-                removeFriendButton.textContent = 'Supprimer';
-                removeFriendButton.classList.add('btn', 'btn-danger', 'ms-auto');
-                removeFriendButton.setAttribute('data-friend-id', friend.id); // Attacher l'ID de l'ami pour la suppression
-
-                // Ajouter un événement de suppression au clic du bouton
-                removeFriendButton.addEventListener('click', async (event) => {
-                    const friendId = event.target.getAttribute('data-friend-id');
-                    await removeFriend(friendId); // Appeler la fonction pour supprimer l'ami
+                // Ajouter l'événement pour afficher les détails de l'ami
+                friendElement.querySelector('.btn-light').addEventListener('click', () => {
+                    showFriendDetails(friendEntry);
                 });
-
-                friendDiv.appendChild(friendInfo);
-                friendDiv.appendChild(removeFriendButton);
-                friendListContainer.appendChild(friendDiv);
             });
-
-            // Ajouter le conteneur des amis dans la page
-            profileInfo.appendChild(friendListContainer);
         } else {
             const noFriendsMessage = document.createElement('p');
             noFriendsMessage.textContent = "Vous n'avez pas encore d'amis.";
-            profileInfo.appendChild(noFriendsMessage);
+            friendListContainerElement.appendChild(noFriendsMessage);
         }
 
     } catch (error) {
         console.error('Erreur lors de la récupération des amis:', error);
         alert('Une erreur s\'est produite. Vérifiez la console pour plus de détails.');
-        window.location.href = 'login.html';
     }
 });
+
+// friendList.js
+
+// Fonction pour afficher les détails de l'ami dans le modal
+function showFriendDetails(friendEntry) {
+    const friend = friendEntry.friend;
+
+    document.getElementById('friendDetailsModalLabel').innerHTML = `<strong>${friend.username}</strong>`;
+    document.getElementById('friendProfilePhoto').src = friend.profile_photo;
+    document.getElementById('friendFirstName').textContent = friend.first_name;
+    document.getElementById('friendLastName').textContent = friend.last_name;
+    document.getElementById('friendDateJoined').textContent = friend.date_joined;
+    document.getElementById('friendLastLogin').textContent = friend.last_login;
+    document.getElementById('friendSince').textContent = friendEntry.timestamp;
+
+    // Charger les stats
+    fetchFriendStats(friend.id);
+
+    // Charger l'historique des parties
+    fetchFriendMatchHistory(friend.id);
+
+    const friendDetailsModal = new bootstrap.Modal(document.getElementById('friendDetailsModal'));
+    friendDetailsModal.show();
+}
+
+// Fonction pour récupérer les statistiques de l'ami
+async function fetchFriendStats(friendId) {
+    const accessToken = localStorage.getItem('accessToken');
+
+    try {
+        const response = await fetch('https://localhost:8000/api/game/show-other-user-stats/', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ user_id: friendId })
+        });
+
+        if (response.ok) {
+            const stats = await response.json();
+            displayFriendStats(stats);
+        } else {
+            console.error('Erreur lors de la récupération des stats de l\'ami');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la récupération des stats de l\'ami:', error);
+    }
+}
+
+function displayFriendStats(stats) {
+    document.getElementById('friendTotalPlayed').textContent = stats.total_played;
+    document.getElementById('friendWinPercentage').textContent = Math.floor((stats.total_wins / stats.total_played) * 100) || 0;
+
+    const modeStatsTable = document.getElementById('friendModeStatsTable');
+    modeStatsTable.innerHTML = `
+        <tr><td>Versus</td><td>${stats.VS_wins}</td><td>${stats.VS_played - stats.VS_wins}</td></tr>
+        <tr><td>Tournament</td><td>${stats.TN_wins}</td><td>${stats.TN_played - stats.TN_wins}</td></tr>
+        <tr><td>Last Man Standing</td><td>${stats.LS_wins}</td><td>${stats.LS_played - stats.LS_wins}</td></tr>
+        <tr><td>Brick Breaker</td><td>${stats.BB_wins}</td><td>${stats.BB_played - stats.BB_wins}</td></tr>
+    `;
+}
+
+// Fonction pour récupérer l'historique de l'ami
+async function fetchFriendMatchHistory(friendId) {
+    const accessToken = localStorage.getItem('accessToken');
+    const historyContainer = document.getElementById('friendMatchHistoryContainer');
+
+    try {
+        const response = await fetch('https://localhost:8000/api/game/show-other-user-match-history/', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ user_id: friendId })
+        });
+
+        if (response.ok) {
+            const history = await response.json();
+            displayFriendMatchHistory(history);
+        } else {
+            console.error('Erreur lors de la récupération de l\'historique des parties de l\'ami');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la récupération de l\'historique des parties de l\'ami:', error);
+    }
+}
+
+// Fonction pour afficher l'historique de l'ami
+function displayFriendMatchHistory(matches) {
+    const historyContainer = document.getElementById('friendMatchHistoryContainer');
+    historyContainer.innerHTML = '';
+
+    if (matches.length === 0) {
+        historyContainer.innerHTML = '<p>Aucune partie jouée pour le moment.</p>';
+        return;
+    }
+
+    matches.forEach((match, index) => {
+        const item = document.createElement('div');
+        item.classList.add('card', 'mb-3', 'p-3', match.result === 'win' ? 'bg-success-subtle' : 'bg-danger-subtle');
+
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <strong>${getModeText(match.mode)}</strong>
+                <button class="btn ${match.result === 'win' ? 'btn-outline-success' : 'btn-outline-danger'} btn-sm" data-bs-toggle="collapse" data-bs-target="#friendMatchDetails${index}">
+                    Détails
+                </button>
+            </div>
+            <div class="text-muted">Joué le ${formatDate(match.date_played)}</div>
+            <div id="friendMatchDetails${index}" class="collapse mt-2">
+                <p><strong>Durée :</strong> ${match.duration}</p>
+                <p><strong>Nombre de joueurs :</strong> ${match.number_of_players}</p>
+                ${match.teammate ? `<p><strong>Coéquipier :</strong> ${match.teammate}</p>` : ''}
+            </div>
+        `;
+
+        historyContainer.appendChild(item);
+    });
+}
+
+// Helper functions to get mode text and format date
+function getModeText(mode) {
+    switch (mode) {
+        case 'VS':
+            return 'Versus';
+        case 'LS':
+            return 'Last Man Standing';
+        case 'BB':
+            return 'Brick Breaker';
+        case 'TN':
+            return 'Tournament';
+        default:
+            return mode;
+    }
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+
+
+
 
 // Fonction pour supprimer un ami
 async function removeFriend(friendId) {
@@ -93,7 +224,7 @@ async function removeFriend(friendId) {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ user_id: friendId }) // Envoyer l'ID de l'ami à supprimer
+            body: JSON.stringify({ user_id: friendId })
         });
 
         if (!response.ok) {
@@ -101,7 +232,6 @@ async function removeFriend(friendId) {
             throw new Error(`Erreur lors de la suppression de l'ami: ${response.status} ${errorText}`);
         }
 
-        // Actualiser la page après la suppression de l'ami
         alert('Ami supprimé avec succès');
         window.location.reload();
 
@@ -110,3 +240,16 @@ async function removeFriend(friendId) {
         messageContainer.innerHTML = `<div class="alert alert-danger">Une erreur s'est produite lors de la suppression de l'ami.</div>`;
     }
 }
+
+document.getElementById('removeFriendBtn').addEventListener('click', async (event) => {
+    const friendId = event.target.getAttribute('data-friend-id');
+    if (friendId) {
+        const confirmation = confirm('Êtes-vous sûr de vouloir supprimer cet ami ?');
+        if (confirmation) {
+            await removeFriend(friendId);
+            const friendDetailsModal = bootstrap.Modal.getInstance(document.getElementById('friendDetailsModal'));
+            friendDetailsModal.hide();
+        }
+    }
+});
+
