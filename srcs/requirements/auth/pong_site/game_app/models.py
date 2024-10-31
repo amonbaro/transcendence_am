@@ -49,18 +49,23 @@ class GameSession(models.Model):
         return f"Game {self.mode} with id {self.id}"
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Base model
-class BasePlayerProfile(models.Model):
+# Abstract model
+# related_name: If related_name is not set, the default is the model name + _set. But the model is abstract
+class AbstractPlayerProfile(models.Model):
+    class Meta:
+        abstract = True
+
     id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='player_game', null=True, blank=True)
-    session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='player_game')
-    date_played = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='%(class)s_player', null=True, blank=True)
+    session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='%(class)s_session')
+    date_played = models.DateTimeField(blank=False, null=False)
     win = models.BooleanField(default=False)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Database register each player in the game session (versus, last man or brick breaker).
 # E.g. for a session with 4 players, 4 PlayerProfile objects are created
-class GamePlayerProfile(BasePlayerProfile):
+class GamePlayerProfile(AbstractPlayerProfile):
     alias = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
@@ -69,7 +74,7 @@ class GamePlayerProfile(BasePlayerProfile):
         return f"Game mode: {self.session.mode} with winner invited player"
 # ----------------------------------------------------------------------------------------------------------------------
 # Database register each player in tournaments
-class TournamentPlayerProfile(BasePlayerProfile):
+class TournamentPlayerProfile(AbstractPlayerProfile):
     alias = models.CharField(max_length=50)
 
     def __str__(self):

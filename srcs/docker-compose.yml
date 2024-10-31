@@ -61,6 +61,7 @@ services:
       - static_files:/var/www/html/static
       - media_files:/var/www/html/media
       - profile_photos:/var/www/html/profile_photos
+      - errors:/var/www/html/errors
     restart: always
 
   cron:
@@ -105,6 +106,13 @@ volumes:
     driver_opts:
       type: none
       device: site/profile_photos
+      o: bind
+  errors:
+    name: errors
+    driver: local
+    driver_opts:
+      type: none
+      device: site/errors
       o: bind
 
 

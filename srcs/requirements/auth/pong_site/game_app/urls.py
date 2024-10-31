@@ -16,5 +16,5 @@ urlpatterns = [
     path('show-current-user-stats/', ShowCurrentUserStatsView.as_view(), name='show-current-user-stats'),
     path('show-current-user-match-history/', CurrentUserMatchHistoryView.as_view(), name='user-match-history'),
     path('show-other-user-match-history/', OtherUserMatchHistoryView.as_view(), name='user-match-history'),
-  #  path('show-all-games-history/', ShowAllGamesView.as_view(), name='show-all-games'),
+#    path('show-all-games-history/', ShowAllGamesView.as_view(), name='show-all-games'),
 ]

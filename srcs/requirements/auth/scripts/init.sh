@@ -61,7 +61,6 @@ python3 manage.py makemigrations user_app
 python3 manage.py makemigrations friends_app
 python3 manage.py makemigrations game_app
 
-
 if [ "$LOG_LEVEL" = "DEBUG" ]; then
     echo "executing python3 manage.py sqlmigrate user_app 0001"
     python3 manage.py sqlmigrate user_app 0001

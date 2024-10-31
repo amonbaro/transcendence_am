@@ -11,6 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('loginPassword').value;
         const playerIndex = document.getElementById('loginPlayerIndex').value;
 
+		const updateVerifiedUsersInLocalStorage = () => {
+			const verifiedUsersObject = Object.fromEntries(verifiedUsers); // Conversion de Map en objet pour stockage
+			localStorage.setItem('verifiedUsers', JSON.stringify(verifiedUsersObject));
+		};
+
         if (!email || !password) {
             alert('Veuillez entrer votre email et mot de passe.');
             return;
@@ -56,6 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
             playerInput.disabled = true; // Empêche la modification du champ après la vérification
             verifiedUsers.set(userData.username, userData.id); // Ajouter l'utilisateur vérifié à la Map avec son ID
             usedUsernames.add(userData.username); // Ajouter à la liste des noms utilisés
+
+			updateVerifiedUsersInLocalStorage();
 
             // Fermer la modale après une connexion réussie
             loginModal.hide();

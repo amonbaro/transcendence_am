@@ -47,6 +47,7 @@ function set_ownership_permissions() {
 set_ownership_permissions "$SITE_PATH"
 set_ownership_permissions "$SITE_PATH"/static
 set_ownership_permissions "$SITE_PATH"/media
+set_ownership_permissions "$SITE_PATH"/errors
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Replace the variables in the template and generate a new conf file
