@@ -1,4 +1,26 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const showAllUsers = urlParams.get('showAllUsers');
+
+    if (showAllUsers === 'true') {
+        const allUsersContainer = document.getElementById('allUsersContainer');
+        const allUsersButton = document.querySelector('[data-bs-target="#allUsersContainer"]') || 
+                               document.querySelector('[href="#allUsersContainer"]');
+
+        // Ouvre le container si le paramètre est présent
+        if (allUsersContainer && !allUsersContainer.classList.contains('show')) {
+            new bootstrap.Collapse(allUsersContainer, { toggle: true });
+            if (allUsersButton) {
+                allUsersButton.setAttribute('aria-expanded', 'true');
+            }
+        }
+
+        // Supprime le paramètre showAllUsers de l'URL après ouverture
+        urlParams.delete('showAllUsers');
+        const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+        window.history.replaceState(null, '', newUrl);
+    }
+
     const accessToken = localStorage.getItem('accessToken');
     const profileInfo = document.getElementById('profileInfoContainer');
     const userFirstName = document.getElementById('userFirstName');

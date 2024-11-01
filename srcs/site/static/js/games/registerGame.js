@@ -116,7 +116,6 @@ export function storeGameSession() {
     }
 }
 
-
 export function registerGameWinner(winnerAlias) {
     const sessionData = JSON.parse(localStorage.getItem('gameSession'));
     if (sessionData) {

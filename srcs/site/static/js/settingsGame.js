@@ -428,3 +428,12 @@ function resetToDefault() {
 }
 
 document.getElementById('defaultSetting').addEventListener('click', resetToDefault);
+
+document.addEventListener('DOMContentLoaded', () => {
+    const accessToken = localStorage.getItem('accessToken');
+    const matchmakingSection = document.getElementById('matchmakingSection');
+
+    if (!accessToken && matchmakingSection) {
+        matchmakingSection.style.display = 'none';
+    }
+});

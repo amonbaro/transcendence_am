@@ -64,6 +64,26 @@
 									<option value="brickBreaker">Brick Breaker</option>
 								</select>
 						</div>
+<!-- Ajoutez un ID à la section complète pour la cibler -->
+<div id="matchmakingSection">
+    <div class="form-group mb-3 d-flex align-items-center justify-content-between">
+        <span id="userWinPercentageText" class="me-3">Mon pourcentage de victoire : %</span>
+        <button id="matchmakingButton" class="btn btn-outline-info" data-bs-toggle="collapse" data-bs-target="#matchmakingAccordion">
+            Show Matchmaking with Friends
+        </button>
+    </div>
+
+    <div id="matchmakingAccordion" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <ul id="friendMatchmakingList" class="list-group">
+                <!-- Amis triés par pourcentage de victoires global -->
+            </ul>
+        </div>
+    </div>
+</div>
+
+						
+
 
 						<div id="player-controls-wrapper" class="row"></div>
 
@@ -131,5 +151,6 @@
 	<script type="module" src="../js/settingsGame.js"></script>
 	<script type="module" src="../js/games/registerGame.js"></script>
 	<script src="../js/games/verifUser.js"></script>
+	<script type="module" src="../js/games/matchmaking.js"></script>
 </body>
 </html>

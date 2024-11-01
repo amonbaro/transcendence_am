@@ -1,5 +1,3 @@
-// currUserStats.js
-
 document.addEventListener('DOMContentLoaded', fetchUserStats);
 
 async function fetchUserStats() {
